@@ -30,7 +30,7 @@ func filterDomains(m map[string]any, include, exclude []string) {
 			return false
 		}
 		for _, pattern := range include {
-			if matched, _ := filepath.Match(pattern, k); matched {
+			if matched, _ := filepath.Match(pattern, strings.ToLower(k)); matched {
 				return false
 			}
 		}
@@ -38,7 +38,7 @@ func filterDomains(m map[string]any, include, exclude []string) {
 	})
 	maps.DeleteFunc(m, func(k string, v any) bool {
 		for _, pattern := range exclude {
-			if matched, _ := filepath.Match(pattern, k); matched {
+			if matched, _ := filepath.Match(pattern, strings.ToLower(k)); matched {
 				return true
 			}
 		}
@@ -52,7 +52,8 @@ func main() {
 
 	flag.Func("filter", "a comma-separated list of `domains`. Prefix names with \"!\" to exclude them. Supports globbing.", func(s string) error {
 		for _, v := range strings.Split(s, ",") {
-			domain, found := strings.CutPrefix(strings.TrimSpace(v), "!")
+			v = strings.ToLower(strings.TrimSpace(v))
+			domain, found := strings.CutPrefix(v, "!")
 			// Users might write "! com.apple.dock" so we trim again
 			domain = strings.TrimSpace(domain)
 			if domain == "" {
