@@ -14,6 +14,12 @@ import (
 	"github.com/catilac/plistwatch/go-plist"
 )
 
+// Version scheme: <upstream-date>-grazij/<N>. The date is the commit date of
+// the newest catilac/plistwatch master commit this fork contains (currently
+// cd0de73). Bump the date when syncing upstream; increment <N> for a
+// fork-only release.
+const version = "2025.09.24-grazij/1"
+
 func getDefaults() (bytes.Buffer, error) {
 	var out bytes.Buffer
 	cmd := exec.Command("defaults", "read")
@@ -50,6 +56,7 @@ func main() {
 	var include []string
 	var exclude []string
 
+	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Func("filter", "a comma-separated list of `domains`. Prefix names with \"!\" to exclude them. Supports globbing.", func(s string) error {
 		for _, v := range strings.Split(s, ",") {
 			v = strings.ToLower(strings.TrimSpace(v))
@@ -71,6 +78,11 @@ func main() {
 		return nil
 	})
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println("plistwatch " + version)
+		return
+	}
 
 	var prev map[string]interface{}
 	var curr map[string]interface{}
