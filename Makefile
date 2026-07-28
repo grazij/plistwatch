@@ -47,7 +47,10 @@ formula:
 	fi; \
 	tarball="https://github.com/$(GITHUB_USER)/$(GITHUB_REPO)/archive/refs/tags/v$(VERSION).tar.gz"; \
 	echo "    fetching $$tarball"; \
-	sha=$$(curl -fsSL "$$tarball" | shasum -a 256 | awk '{print $$1}'); \
+	tmp=$$(mktemp); \
+	curl -fsSL "$$tarball" -o "$$tmp"; \
+	sha=$$(shasum -a 256 "$$tmp" | awk '{print $$1}'); \
+	rm -f "$$tmp"; \
 	if [ -z "$$sha" ]; then \
 		echo "error: empty SHA — is tag v$(VERSION) pushed to $(GITHUB_USER)/$(GITHUB_REPO)?" >&2; \
 		exit 1; \
