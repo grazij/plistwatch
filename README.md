@@ -9,6 +9,16 @@ It outputs a `defaults` command to recreate that change.
 go install  github.com/catilac/plistwatch@latest
 ```
 
+### Universal binary (Intel + Apple Silicon)
+
+To build a fat binary that runs natively on both architectures:
+```
+./build-macos-universal.sh
+```
+This produces `./plistwatch` containing x86_64 and arm64 slices (verify with
+`lipo -info plistwatch`). Requires the Go toolchain and Xcode command line
+tools (for `lipo`).
+
 ## Usage
 Just run:
 ```
