@@ -18,7 +18,7 @@ import (
 // the newest catilac/plistwatch master commit this fork contains (currently
 // cd0de73). Bump the date when syncing upstream; increment <N> for a
 // fork-only release.
-const version = "2025.09.24-grazij/1"
+const version = "2025.09.24-grazij/2"
 
 func getDefaults() (bytes.Buffer, error) {
 	var out bytes.Buffer
