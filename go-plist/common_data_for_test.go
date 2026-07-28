@@ -160,6 +160,16 @@ var tests = []TestData{
 		},
 	},
 	{
+		Name:  "String containing apostrophe",
+		Value: "'",
+		Documents: map[int][]byte{
+			OpenStepFormat: []byte(`"'"`),
+			GNUStepFormat:  []byte(`"'"`),
+			XMLFormat:      []byte(xmlPreamble + `<plist version="1.0"><string>&#39;</string></plist>`),
+			BinaryFormat:   []byte{98, 112, 108, 105, 115, 116, 48, 48, 81, 39, 8, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10},
+		},
+	},
+	{
 		Name: "Basic Structure",
 		Value: struct {
 			Name string
@@ -284,6 +294,18 @@ var tests = []TestData{
 	{
 		Name:  "Arbitrary Byte Data",
 		Value: []byte{'h', 'e', 'l', 'l', 'o'},
+		Documents: map[int][]byte{
+			OpenStepFormat: []byte(`<68656c6c 6f>`),
+			GNUStepFormat:  []byte(`<[aGVsbG8=]>`),
+			XMLFormat:      []byte(xmlPreamble + `<plist version="1.0"><data>aGVsbG8=</data></plist>`),
+			BinaryFormat:   []byte{98, 112, 108, 105, 115, 116, 48, 48, 69, 104, 101, 108, 108, 111, 8, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14},
+		},
+		// We are not encoding base64 for GNUstep yet
+		SkipEncode: map[int]bool{GNUStepFormat: true},
+	},
+	{
+		Name:  "Arbitrary Byte Data (array)",
+		Value: [5]byte{'h', 'e', 'l', 'l', 'o'},
 		Documents: map[int][]byte{
 			OpenStepFormat: []byte(`<68656c6c 6f>`),
 			GNUStepFormat:  []byte(`<[aGVsbG8=]>`),
@@ -950,6 +972,110 @@ var tests = []TestData{
 		},
 		SkipEncode: map[int]bool{GNUStepFormat: true},
 	},
+	{
+		Name: "A struct containing a pointer to a pointer (etc)",
+		Value: &StructWithDeeplyNestedPointer{
+			Intppp: nestedPtrIntValppp,
+		},
+		Documents: map[int][]byte{
+			GNUStepFormat: []byte(`{Intppp=<*I3>;}`),
+		},
+	},
+	{
+		Name: "Embedded fields within a nil omitempty member",
+		Value: struct {
+			*InnerStructWithSimpleField `plist:",omitempty"`
+		}{},
+		Documents: map[int][]byte{
+			GNUStepFormat: []byte(`{}`),
+		},
+	},
+	{
+		Name: "Embedded fields within a nil omitempty member, telescoping",
+		Value: struct {
+			O                      string `plist:",omitempty"`
+			*InnerStructEmbedNest1 `plist:",omitempty"`
+		}{O: "sentinel"},
+		Documents: map[int][]byte{
+			GNUStepFormat: []byte(`{O=sentinel;}`),
+		},
+	},
+	{
+		Name: "Embedded fields within a nil omitempty member, telescoping, 1",
+		Value: struct {
+			O                      string `plist:",omitempty"`
+			*InnerStructEmbedNest1 `plist:",omitempty"`
+		}{
+			O:                     "sentinel",
+			InnerStructEmbedNest1: &InnerStructEmbedNest1{One: "one"},
+		},
+		Documents: map[int][]byte{
+			GNUStepFormat: []byte(`{O=sentinel;One=one;}`),
+		},
+	},
+	{
+		Name: "Embedded fields within a nil omitempty member, telescoping, 2",
+		Value: struct {
+			O                      string `plist:",omitempty"`
+			*InnerStructEmbedNest1 `plist:",omitempty"`
+		}{
+			O: "sentinel",
+			InnerStructEmbedNest1: &InnerStructEmbedNest1{
+				One: "one",
+				InnerStructEmbedNest2: &InnerStructEmbedNest2{
+					Two: "two",
+				},
+			},
+		},
+		Documents: map[int][]byte{
+			GNUStepFormat: []byte(`{O=sentinel;One=one;Two=two;}`),
+		},
+	},
+	{
+		Name: "Embedded fields within a nil omitempty member, telescoping, non-nil-but-non-empty",
+		Value: struct {
+			O                      string `plist:",omitempty"`
+			*InnerStructEmbedNest1 `plist:",omitempty"`
+		}{
+			O: "sentinel",
+			InnerStructEmbedNest1: &InnerStructEmbedNest1{
+				InnerStructEmbedNest2: &InnerStructEmbedNest2{
+					InnerStructEmbedNest3: &InnerStructEmbedNest3{},
+				},
+			},
+		},
+		Documents: map[int][]byte{
+			GNUStepFormat: []byte(`{O=sentinel;One="";Three="";Two="";}`),
+		},
+	},
+}
+
+type StructWithDeeplyNestedPointer struct {
+	Intppp ***int
+}
+
+var nestedPtrIntVal int = 3
+var nestedPtrIntValp = &nestedPtrIntVal
+var nestedPtrIntValpp = &nestedPtrIntValp
+var nestedPtrIntValppp = &nestedPtrIntValpp
+
+type InnerStructWithSimpleField struct {
+	S string
+}
+
+type InnerStructEmbedNest1 struct {
+	One                    string
+	*InnerStructEmbedNest2 `plist:",omitempty"`
+}
+
+type InnerStructEmbedNest2 struct {
+	Two                    string
+	*InnerStructEmbedNest3 `plist:",omitempty"`
+}
+
+type InnerStructEmbedNest3 struct {
+	Three                       string
+	*InnerStructWithSimpleField `plist:",omitempty"`
 }
 
 type EverythingTestData struct {

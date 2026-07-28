@@ -1,7 +1,7 @@
 # Local patches to the vendored go-plist library
 #
-# Base: upstream commit 3b63eb3a43b59c776909681ed1fcb412b47d3c9a
-#       ("text: break up accidental doc comment", 2020-04-19)
+# Base: upstream commit ee69052608d9dc747b37cd807a2a89ff14e93051
+#       ("ci: update Go versions in CI workflow and improve caching (GH-88)", 2025-03-14)
 #       from https://gitlab.howett.net/go/plist
 #       (mirrored at https://github.com/grazij/go-plist, branch main)
 #
@@ -20,7 +20,7 @@
 #
 # Regenerate (with the upstream clone at ../plist, base commit unchanged):
 #   cd ../plist && git --work-tree=../plistwatch/go-plist \
-#     diff 3b63eb3 -- plist.go text_generator.go text_parser.go \
+#     diff ee69052 -- plist.go text_generator.go text_parser.go \
 #     > ../plistwatch/go-plist/PATCHES.diff   # then re-add this header
 #
 diff --git a/plist.go b/plist.go
@@ -67,7 +67,7 @@ index d71f02b..e490f88 100644
  				s += string(c)
  			}
 diff --git a/text_parser.go b/text_parser.go
-index c60423f..f931bc2 100644
+index 5640183..082a432 100644
 --- a/text_parser.go
 +++ b/text_parser.go
 @@ -12,6 +12,7 @@ import (
@@ -116,7 +116,7 @@ index c60423f..f931bc2 100644
  // the { has already been consumed
  func (p *textPlistParser) parseDictionary(ignoreEof bool) cfValue {
  	//p.ignore() // ignore the {
-@@ -541,6 +560,9 @@ func (p *textPlistParser) parseHexData() cfData {
+@@ -547,6 +566,9 @@ func (p *textPlistParser) parseHexData() cfData {
  }
  
  func (p *textPlistParser) parsePlistValue() cfValue {
@@ -126,7 +126,7 @@ index c60423f..f931bc2 100644
  	for {
  		p.skipWhitespaceAndComments()
  
-@@ -562,6 +584,12 @@ func (p *textPlistParser) parsePlistValue() cfValue {
+@@ -568,6 +590,12 @@ func (p *textPlistParser) parsePlistValue() cfValue {
  		case '"':
  			return p.parseQuotedString()
  		case '{':
