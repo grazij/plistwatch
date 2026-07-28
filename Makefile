@@ -1,5 +1,5 @@
 BINARY = plistwatch
-VERSION ?= 2025.9.24.1
+VERSION ?= 2025.9.24.2
 PREFIX ?= /usr/local
 
 # Homebrew tap location and GitHub coordinates used by the `formula` target.
