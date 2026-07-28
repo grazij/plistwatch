@@ -56,8 +56,11 @@ func main() {
 	var include []string
 	var exclude []string
 
-	showVersion := flag.Bool("version", false, "print version and exit")
-	flag.Func("filter", "a comma-separated list of `domains`. Prefix names with \"!\" to exclude them. Supports globbing.", func(s string) error {
+	var showVersion bool
+	flag.BoolVar(&showVersion, "version", false, "print version and exit")
+	flag.BoolVar(&showVersion, "v", false, "shorthand for --version")
+
+	parseFilter := func(s string) error {
 		for _, v := range strings.Split(s, ",") {
 			v = strings.ToLower(strings.TrimSpace(v))
 			domain, found := strings.CutPrefix(v, "!")
@@ -76,10 +79,12 @@ func main() {
 			}
 		}
 		return nil
-	})
+	}
+	flag.Func("filter", "a comma-separated list of `domains`. Prefix names with \"!\" to exclude them. Supports globbing.", parseFilter)
+	flag.Func("f", "shorthand for --filter", parseFilter)
 	flag.Parse()
 
-	if *showVersion {
+	if showVersion {
 		fmt.Println("plistwatch " + version)
 		return
 	}

@@ -27,24 +27,26 @@ defaults write "com.apple.dock" "orientation" 'left'
 The output can also be filtered:
 ```
 Usage of plistwatch:
-  -filter domains
+  -f, --filter domains
     	a comma-separated list of domains. Prefix names with "!" to exclude them. Supports globbing.
+  -v, --version
+    	print version and exit
 ```
 
 Invalid glob patterns (e.g. an unclosed `[`) are rejected at startup with an error.
 
-`plistwatch -version` prints the version and exits. The scheme is
+`plistwatch --version` prints the version and exits. The scheme is
 `<upstream-date>-grazij/<N>`: the commit date of the newest
 [catilac/plistwatch](https://github.com/catilac/plistwatch) commit this fork
 contains, plus a fork release number.
 
 Examples:
 - Hide annoying settings domains
-`plistwatch -filter "!com.apple.knowledge-agent,!ContextStoreAgent"`
+`plistwatch --filter "!com.apple.knowledge-agent,!ContextStoreAgent"`
 - Only show changes to the dock
-`plistwatch -filter "com.apple.dock"`
+`plistwatch -f "com.apple.dock"`
 - Hide every Apple domain
-`plistwatch -filter "!com.apple.*"`
+`plistwatch -f "!com.apple.*"`
 
 ## Vendored go-plist
 
