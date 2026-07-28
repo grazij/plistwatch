@@ -42,7 +42,11 @@ You may also see other events being reported.
 And you should see output such as:
 ```
 defaults write "com.apple.dock" "orientation" 'left'
+defaults write "com.apple.dock" "wvous-br-corner" -integer 14
 ```
+
+Each line is a complete, runnable command: re-running it reapplies the change
+with its original type preserved.
 
 The output can also be filtered:
 ```
