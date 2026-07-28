@@ -9,10 +9,17 @@
 #        brew install grazij/tap/plistwatch
 #
 # To compute SHA256 for the release tarball:
-#   curl -sL https://github.com/grazij/plistwatch/archive/refs/tags/v2025.9.24.1.tar.gz | shasum -a 256
+#   curl -sL https://github.com/grazij/plistwatch/archive/refs/tags/v2025.9.24.2.tar.gz | shasum -a 256
 #
-# To install locally for testing without a tap:
-#   brew install --build-from-source ./Formula/plistwatch.rb
+# To test edits to this file before publishing: current Homebrew rejects any
+# formula outside a tap ("Homebrew requires formulae to be in a tap"), so both
+# `brew style` and `brew install` on this path fail. Work through the tapped
+# clone instead — note that is a separate checkout from ../homebrew-tap, and
+# `brew update` will reset it:
+#   cp Formula/plistwatch.rb "$(brew --repository grazij/tap)/Formula/"
+#   brew style --formula grazij/tap/plistwatch
+#   brew install --build-from-source grazij/tap/plistwatch
+#   git -C "$(brew --repository grazij/tap)" checkout -- Formula/plistwatch.rb
 
 class Plistwatch < Formula
   desc "Watch macOS defaults and print the commands that recreate each change"
