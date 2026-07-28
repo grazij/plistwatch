@@ -59,6 +59,9 @@ func main() {
 			if domain == "" {
 				continue
 			}
+			if _, err := filepath.Match(domain, ""); err != nil {
+				return fmt.Errorf("invalid filter pattern %q: %w", domain, err)
+			}
 			if found {
 				exclude = append(exclude, domain)
 			} else {

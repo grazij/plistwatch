@@ -31,6 +31,8 @@ Usage of plistwatch:
     	a comma-separated list of domains. Prefix names with "!" to exclude them. Supports globbing.
 ```
 
+Invalid glob patterns (e.g. an unclosed `[`) are rejected at startup with an error.
+
 Examples:
 - Hide annoying settings domains
 `plistwatch -filter "!com.apple.knowledge-agent,!ContextStoreAgent"`
