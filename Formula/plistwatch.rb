@@ -26,7 +26,9 @@ class Plistwatch < Formula
   depends_on :macos
 
   def install
-    system "go", "build", *std_go_args(ldflags: "-s -w")
+    # std_go_args already adds `-s -w` itself (and drops them for
+    # --debug-symbols builds), so don't pass them again.
+    system "go", "build", *std_go_args
   end
 
   test do
