@@ -307,7 +307,7 @@ func (p *textPlistParser) parseQuotedString() cfString {
 			s += p.emit()
 
 			// Escaping a backslash is the only thing that is correctly stored and represented in `defaults`
-			if p.input[p.pos:p.pos+4] == "\\\\\\\\" {
+			if p.pos+4 <= len(p.input) && p.input[p.pos:p.pos+4] == "\\\\\\\\" {
 				p.pos += 4
 				p.ignore()
 				s += "\\"
