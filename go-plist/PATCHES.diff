@@ -1,0 +1,141 @@
+# Local patches to the vendored go-plist library
+#
+# Base: upstream commit 3b63eb3a43b59c776909681ed1fcb412b47d3c9a
+#       ("text: break up accidental doc comment", 2020-04-19)
+#       from https://gitlab.howett.net/go/plist
+#       (mirrored at https://github.com/grazij/go-plist, branch main)
+#
+# The vendored copy differs from that base by:
+#   - plist.go:          new DefaultsFormat constant (format 5) for the
+#                        not-quite-OpenStep output of `defaults read`
+#   - text_parser.go:    parse the `{length = N, bytes = 0x...}` byte-summary
+#                        blobs `defaults` prints for binary data; work around
+#                        `defaults`' extra-backslash escaping in quoted
+#                        strings (with a bounds check so a trailing `\` near
+#                        EOF errors instead of panicking)
+#   - text_generator.go: emit \t \r \n as escape sequences, not raw control
+#                        characters, so printed commands are copy-pasteable
+#   - deleted (not in this diff): .github/workflows/ci.yml, .gitlab-ci.yml,
+#                        go.mod, go.sum
+#
+# Regenerate (with the upstream clone at ../plist, base commit unchanged):
+#   cd ../plist && git --work-tree=../plistwatch/go-plist \
+#     diff 3b63eb3 -- plist.go text_generator.go text_parser.go \
+#     > ../plistwatch/go-plist/PATCHES.diff   # then re-add this header
+#
+diff --git a/plist.go b/plist.go
+index 8883e1c..b84152c 100644
+--- a/plist.go
++++ b/plist.go
+@@ -16,6 +16,11 @@ const (
+ 	BinaryFormat   = 2
+ 	OpenStepFormat = 3
+ 	GNUStepFormat  = 4
++
++	// On MacOS there is a `defaults` command which outputs data
++	// in the spirit of OpenStepFormat. But has an additional Byte Summary
++	// TODO - is this necessary?
++	DefaultsFormat = 5
+ )
+ 
+ var FormatNames = map[int]string{
+@@ -24,6 +29,7 @@ var FormatNames = map[int]string{
+ 	BinaryFormat:   "Binary",
+ 	OpenStepFormat: "OpenStep",
+ 	GNUStepFormat:  "GNUStep",
++	DefaultsFormat: "Defaults(OpenStep)",
+ }
+ 
+ type unknownTypeError struct {
+diff --git a/text_generator.go b/text_generator.go
+index d71f02b..e490f88 100644
+--- a/text_generator.go
++++ b/text_generator.go
+@@ -66,8 +66,12 @@ func (p *textPlistGenerator) plistQuotedString(str string) string {
+ 				s += `\\`
+ 			case '"':
+ 				s += `\"`
+-			case '\t', '\r', '\n':
+-				fallthrough
++			case '\t':
++				s += `\t`
++			case '\r':
++				s += `\r`
++			case '\n':
++				s += `\n`
+ 			default:
+ 				s += string(c)
+ 			}
+diff --git a/text_parser.go b/text_parser.go
+index c60423f..f931bc2 100644
+--- a/text_parser.go
++++ b/text_parser.go
+@@ -12,6 +12,7 @@ import (
+ 	"fmt"
+ 	"io"
+ 	"io/ioutil"
++	"regexp"
+ 	"runtime"
+ 	"strings"
+ 	"time"
+@@ -301,10 +302,21 @@ func (p *textPlistParser) parseQuotedString() cfString {
+ 				return cfString(s)
+ 			}
+ 		case '\\':
++
+ 			slowPath = true
+ 			s += p.emit()
+-			p.next() // consume \
+-			s += p.parseEscape()
++
++			// Escaping a backslash is the only thing that is correctly stored and represented in `defaults`
++			if p.pos+4 <= len(p.input) && p.input[p.pos:p.pos+4] == "\\\\\\\\" {
++				p.pos += 4
++				p.ignore()
++				s += "\\"
++			} else {
++				// everything else is incorrectly encoded with one additional backslash \\"
++				p.next() // consume \
++				p.next() // consume \
++				s += p.parseEscape()
++			}
+ 		}
+ 	}
+ }
+@@ -319,6 +331,13 @@ func (p *textPlistParser) parseUnquotedString() cfString {
+ 	return cfString(s)
+ }
+ 
++func (p *textPlistParser) parseByteSummary() cfString {
++	p.scanUntil('}')
++	p.next()
++	s := p.emit()
++	return cfString(s)
++}
++
+ // the { has already been consumed
+ func (p *textPlistParser) parseDictionary(ignoreEof bool) cfValue {
+ 	//p.ignore() // ignore the {
+@@ -541,6 +560,9 @@ func (p *textPlistParser) parseHexData() cfData {
+ }
+ 
+ func (p *textPlistParser) parsePlistValue() cfValue {
++
++	re := regexp.MustCompile(`length = [0-9]+, bytes =`)
++
+ 	for {
+ 		p.skipWhitespaceAndComments()
+ 
+@@ -562,6 +584,12 @@ func (p *textPlistParser) parsePlistValue() cfValue {
+ 		case '"':
+ 			return p.parseQuotedString()
+ 		case '{':
++			if loc := re.FindStringIndex(p.input[p.pos:]); loc != nil && loc[0] == 0 {
++				p.format = DefaultsFormat
++				p.backup()
++				return p.parseByteSummary()
++			}
++
+ 			return p.parseDictionary(false)
+ 		case '(':
+ 			return p.parseArray()

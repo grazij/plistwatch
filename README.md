@@ -38,3 +38,10 @@ Examples:
 `plistwatch -filter "com.apple.dock"`
 - Hide every Apple domain
 `plistwatch -filter "!com.apple.*"`
+
+## Vendored go-plist
+
+The `go-plist/` directory is a patched vendored copy of
+[howett.net/plist](https://gitlab.howett.net/go/plist), modified to parse the
+not-quite-OpenStep output of `defaults read`. The local changes and the exact
+upstream base commit are documented in `go-plist/PATCHES.diff`.
