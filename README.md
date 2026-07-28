@@ -5,6 +5,16 @@ PlistWatch monitors real-time changes to plist files on your system.
 It outputs a `defaults` command to recreate that change.
 
 ## Install
+
+### Homebrew
+
+```
+brew tap grazij/tap
+brew install grazij/tap/plistwatch
+```
+
+### go install
+
 ```
 go install  github.com/catilac/plistwatch@latest
 ```
@@ -49,6 +59,8 @@ Invalid glob patterns (e.g. an unclosed `[`) are rejected at startup with an err
 `<upstream-date>-grazij/<N>`: the commit date of the newest
 [catilac/plistwatch](https://github.com/catilac/plistwatch) commit this fork
 contains, plus a fork release number.
+Release git tags encode the same version with dots only (e.g. `v2025.9.24.1`),
+which is the version Homebrew reports.
 
 Examples:
 - Hide annoying settings domains
