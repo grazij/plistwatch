@@ -92,7 +92,8 @@ the core is the commit date of the newest
 [catilac/plistwatch](https://github.com/catilac/plistwatch) commit this fork
 contains; the counter is the fork release number. The release git tag is the
 version prefixed with `v` (e.g. `v2025.09.24+grazij.3`), and that is the version
-Homebrew reports.
+Homebrew reports. `./bump-fork-version.sh` increments the counter (in `main.go`
+and the `Makefile`) and prints the new version; the core is changed by hand.
 
 Examples:
 - Hide annoying settings domains
