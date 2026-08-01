@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-PlistWatch is a small macOS-only Go CLI that polls `defaults read` every second, diffs the result against the previous snapshot, and prints the `defaults write`/`defaults delete` commands that would recreate each change. Module path: `github.com/catilac/plistwatch`.
+PlistWatch is a small macOS-only Go CLI that polls `defaults read` every second, diffs the result against the previous snapshot, and prints the `defaults write`/`defaults delete` commands that would recreate each change. Module path: `github.com/grazij/plistwatch` (renamed from upstream's `github.com/catilac/plistwatch` so `go install` targets this fork; upstream syncs will conflict on `go.mod` and the two `go-plist` import lines).
 
 ## Commands
 
@@ -36,7 +36,7 @@ Two Go files make up the entire tool:
 
   `defaults` parses quoted OpenStep text back to the right type, so strings, arrays, dicts and data need no type flag — only the scalar flags above are emitted explicitly.
 
-`go-plist/` is a vendored, in-tree copy of `howett.net/plist` (imported as `github.com/catilac/plistwatch/go-plist`), used for both parsing `defaults read` output (which is OpenStep/GNUStep text format) and re-serializing values. It is third-party code (BSD-licensed, see `go-plist/LICENSE`); the leftover `howett.net/plist` entries in `go.sum` are unused.
+`go-plist/` is a vendored, in-tree copy of `howett.net/plist` (imported as `github.com/grazij/plistwatch/go-plist`), used for both parsing `defaults read` output (which is OpenStep/GNUStep text format) and re-serializing values. It is third-party code (BSD-licensed, see `go-plist/LICENSE`); the leftover `howett.net/plist` entries in `go.sum` are unused.
 
 ### Vendoring provenance
 

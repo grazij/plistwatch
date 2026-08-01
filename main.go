@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/catilac/plistwatch/go-plist"
+	"github.com/grazij/plistwatch/go-plist"
 )
 
 // Version scheme: <upstream-date>-grazij/<N>. The date is the commit date of

@@ -1,3 +1,3 @@
-module github.com/catilac/plistwatch
+module github.com/grazij/plistwatch
 
 go 1.18
