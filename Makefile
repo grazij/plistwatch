@@ -69,6 +69,7 @@ formula:
 	git commit -m "chore(formula): bump to v$(VERSION)"; \
 	git push origin main; \
 	cp Formula/plistwatch.rb "$(TAP_DIR)/Formula/plistwatch.rb"; \
+	chmod 644 "$(TAP_DIR)/Formula/plistwatch.rb"; \
 	cd "$(TAP_DIR)" && \
 		git add Formula/plistwatch.rb && \
 		git diff --cached --stat && \
@@ -78,9 +79,21 @@ formula:
 	echo "    sanity check: make formula-verify"
 
 # First-time / sanity-check install via the published tap.
+#
+# Don't untap to refresh: `brew untap` refuses while any formula from the tap is
+# installed (duti lives in the same tap), and `|| true` used to swallow that,
+# leaving a stale clone that silently installed the previous release. Fetch the
+# tap clone directly instead, and assert the installed version.
 formula-verify:
-	brew untap $(GITHUB_USER)/tap 2>/dev/null || true
-	brew tap $(GITHUB_USER)/tap
-	brew install $(GITHUB_USER)/tap/$(BINARY)
-	$(BINARY) --version
+	@set -e; \
+	brew tap $(GITHUB_USER)/tap; \
+	tap_dir=$$(brew --repository $(GITHUB_USER)/tap); \
+	git -C "$$tap_dir" fetch origin main; \
+	git -C "$$tap_dir" reset --hard origin/main; \
+	brew install $(GITHUB_USER)/tap/$(BINARY) || \
+		brew upgrade $(GITHUB_USER)/tap/$(BINARY); \
+	got=$$($(BINARY) --version); \
+	echo "==> $$got"; \
+	[ "$$got" = "$(BINARY) $(VERSION)" ] || \
+		{ echo "error: expected '$(BINARY) $(VERSION)'" >&2; exit 1; }; \
 	brew uninstall $(BINARY)
