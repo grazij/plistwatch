@@ -53,8 +53,10 @@ tarball and is mirrored into `git@github.com:grazij/homebrew-tap.git` (expected
 cloned at `../homebrew-tap`) by `make formula`. The release tag is the `version`
 const with a `v` prefix and the `+` intact: `2025.09.24+grazij.3` ⇒ tag
 `v2025.09.24+grazij.3`. Flow: bump the `version` const if needed, commit,
-`git tag v<X> && git push origin main --tags`, then `make formula VERSION=<X>` and
-sanity-check with `make formula-verify`. The formula's `url`/`version`/`sha256`
+`git tag v<X> && git push origin main --tags`, `gh release create v<X>` (livecheck's
+`:github_latest` strategy reads `/releases/latest`, so a bare tag leaves
+`brew livecheck` failing with `GitHub::API::HTTPNotFoundError`), then
+`make formula VERSION=<X>` and sanity-check with `make formula-verify`. The formula's `url`/`version`/`sha256`
 lines are rewritten by sed — keep their exact formatting. Also bump the Makefile's
 `VERSION ?=` default so a bare `make formula` targets the new release.
 
@@ -71,6 +73,14 @@ Gotchas hit in practice:
 - **`make formula` never pulls the tap.** If `../homebrew-tap` is behind its remote
   the push fails after the local commits are already made; `git -C ../homebrew-tap
   pull --rebase origin main` and push again.
+- **Never `brew untap grazij/tap` to refresh it.** It refuses while any formula from
+  that tap is installed — duti lives in the same tap — so the old
+  `brew untap ... || true` in `formula-verify` silently left a stale clone and
+  verified the *previous* release. The target now fetches and hard-resets the tap
+  clone and asserts `plistwatch --version` equals `$(VERSION)`.
+- **`chmod 644` the formula copied into the tap.** Git records 644, but a `cp` or
+  checkout under an 077 umask yields 600, which `brew style`/`brew audit` reject.
+  `make formula` does this; the tapped clone may still need it by hand.
 - **Testing formula edits needs a tap.** Current Homebrew rejects any formula
   outside one, so `brew style --formula Formula/plistwatch.rb` and
   `brew install --build-from-source ./Formula/plistwatch.rb` both fail with
