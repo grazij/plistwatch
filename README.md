@@ -4,6 +4,34 @@
 PlistWatch monitors real-time changes to plist files on your system.
 It outputs a `defaults` command to recreate that change.
 
+## Differences from upstream
+
+This is a fork of [catilac/plistwatch](https://github.com/catilac/plistwatch).
+It contains everything in upstream `master` (as of `cd0de73`, 2025-09-24) plus:
+
+- **Domain filtering** — `--filter`/`-f` with globs, `!` exclusions and
+  case-insensitive matching (from an upstream PR that was never merged there).
+- **Invalid glob patterns are rejected at startup** instead of silently never matching.
+- **`--version`/`-v` flag** and a fork version scheme (`<upstream-date>-grazij/<N>`).
+- **Integer/float/date values are emitted correctly.** Upstream splits the
+  `read-type` switch into separate `case` clauses, so those types produce a
+  valueless `defaults write` that fails with "Rep argument is not a dictionary"
+  (upstream issue #9).
+- **Values are shell-quoted properly** — an embedded apostrophe no longer
+  produces a command the shell rejects.
+- **Type fallback when `defaults read-type` fails**, so numbers are not rewritten
+  as strings.
+- **Vendored `go-plist` updated** to upstream `ee69052` (2025-03-14), with a
+  trailing-backslash parser panic fixed and all local patches documented in
+  `go-plist/PATCHES.diff`.
+- **Unit tests** (`diff_test.go`) for the value-formatting helpers.
+- **Distribution** — Homebrew tap (`grazij/tap`), a `Makefile`, and
+  `build-macos-universal.sh` for a fat Intel + Apple Silicon binary.
+
+Note: the module path is still `github.com/catilac/plistwatch`, so the
+`go install` command below installs **upstream**, not this fork. Use Homebrew or
+build from a clone to get the fork.
+
 ## Install
 
 ### Homebrew
