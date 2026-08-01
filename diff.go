@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/catilac/plistwatch/go-plist"
+	"github.com/grazij/plistwatch/go-plist"
 )
 
 // shellQuote wraps s in single quotes so it survives the shell as one argument.

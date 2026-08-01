@@ -27,10 +27,8 @@ It contains everything in upstream `master` (as of `cd0de73`, 2025-09-24) plus:
 - **Unit tests** (`diff_test.go`) for the value-formatting helpers.
 - **Distribution** — Homebrew tap (`grazij/tap`), a `Makefile`, and
   `build-macos-universal.sh` for a fat Intel + Apple Silicon binary.
-
-Note: the module path is still `github.com/catilac/plistwatch`, so the
-`go install` command below installs **upstream**, not this fork. Use Homebrew or
-build from a clone to get the fork.
+- **Module path renamed** to `github.com/grazij/plistwatch`, so `go install`
+  installs this fork rather than upstream.
 
 ## Install
 
@@ -44,7 +42,7 @@ brew install grazij/tap/plistwatch
 ### go install
 
 ```
-go install  github.com/catilac/plistwatch@latest
+go install github.com/grazij/plistwatch@latest
 ```
 
 ### Universal binary (Intel + Apple Silicon)
