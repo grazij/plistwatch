@@ -16,6 +16,7 @@ go test .                   # run the root-package unit tests (never `./...`)
 ./build-macos-universal.sh  # build ./plistwatch as a universal (x86_64 + arm64) binary via lipo
 make build                  # same as go build .
 make universal              # same as ./build-macos-universal.sh
+./bump-fork-version.sh      # increment the fork counter in main.go + Makefile, print the new version
 make formula VERSION=X.Y.Z  # publish Formula/plistwatch.rb to the grazij/homebrew-tap repo (tag vX.Y.Z must be pushed)
 make formula-verify         # end-to-end tap install sanity check
 ```
@@ -28,7 +29,7 @@ Do not use `./...`: the vendored `go-plist/cmd/` tools and one example test impo
 
 Two Go files make up the entire tool:
 
-- `main.go` — flag parsing (`--filter`/`-f`, comma-separated domain globs, `!` prefix excludes, matched case-insensitively via `filepath.Match`; malformed glob patterns are rejected at parse time; `--version`/`-v` prints the version and exits; short/long forms are separate stdlib-flag registrations sharing one variable/closure), the 1-second poll loop, and `filterDomains` which prunes the top-level domain map before diffing. The `version` const uses the scheme `<upstream core>+grazij.<counter>`, shared with the sibling `../duti` fork. Upstream tags no releases, so the core is the commit date of the newest upstream (catilac/plistwatch master) commit this fork contains; bump the core on upstream syncs, increment the counter for fork-only releases. It is the single source of truth — the Makefile's `VERSION ?=` and the formula's `version` line must be kept in step by hand.
+- `main.go` — flag parsing (`--filter`/`-f`, comma-separated domain globs, `!` prefix excludes, matched case-insensitively via `filepath.Match`; malformed glob patterns are rejected at parse time; `--version`/`-v` prints the version and exits; short/long forms are separate stdlib-flag registrations sharing one variable/closure), the 1-second poll loop, and `filterDomains` which prunes the top-level domain map before diffing. The `version` const uses the scheme `<upstream core>+grazij.<counter>`, shared with the sibling `../duti` fork. Upstream tags no releases, so the core is the commit date of the newest upstream (catilac/plistwatch master) commit this fork contains; bump the core on upstream syncs, increment the counter for fork-only releases. It is the single source of truth: `./bump-fork-version.sh` increments the counter and rewrites both it and the Makefile's `VERSION ?=` default (refusing if the two disagree or the version is not in that shape), and `make formula` rewrites the formula's `version` line.
 - `diff.go` — `Diff(prev, curr)` walks the two-level structure (domain → keys) and prints `defaults` commands for added/changed/deleted domains and keys. It shells out to `defaults read-type` to decide the value flag (`-bool`, `-integer`, etc.) and uses `cmp` for deep equality of plist values. Values are serialized back to OpenStep format via the plist library's `plist.Marshal(v, plist.OpenStepFormat)`. Three pure helpers do the formatting:
   - `valueArg(typ, s)` — maps a `read-type` name plus marshaled value to the command's value argument. **`case "integer", "float", "date":` must stay one clause**: Go has no implicit fallthrough, and splitting it (as upstream did) leaves the value empty, emitting a valueless `defaults write` that fails with "Rep argument is not a dictionary" — upstream issue #9.
   - `shellQuote(s)` — single-quotes a value, escaping embedded `'` as `'\''`. Any value containing an apostrophe would otherwise produce a command the shell rejects.
@@ -52,7 +53,7 @@ To upgrade: fetch `upstream` in `../plist` and review changes since the base com
 tarball and is mirrored into `git@github.com:grazij/homebrew-tap.git` (expected
 cloned at `../homebrew-tap`) by `make formula`. The release tag is the `version`
 const with a `v` prefix and the `+` intact: `2025.09.24+grazij.3` ⇒ tag
-`v2025.09.24+grazij.3`. Flow: bump the `version` const if needed, commit,
+`v2025.09.24+grazij.3`. Flow: `./bump-fork-version.sh` (or edit the `version` const by hand for an upstream-core change), commit,
 `git tag v<X> && git push origin main --tags`, `gh release create v<X>` (livecheck's
 `:github_latest` strategy reads `/releases/latest`, so a bare tag leaves
 `brew livecheck` failing with `GitHub::API::HTTPNotFoundError`), then
