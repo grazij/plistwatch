@@ -12,7 +12,7 @@ It contains everything in upstream `master` (as of `cd0de73`, 2025-09-24) plus:
 - **Domain filtering** — `--filter`/`-f` with globs, `!` exclusions and
   case-insensitive matching (from an upstream PR that was never merged there).
 - **Invalid glob patterns are rejected at startup** instead of silently never matching.
-- **`--version`/`-v` flag** and a fork version scheme (`<upstream-date>-grazij/<N>`).
+- **`--version`/`-v` flag** and a fork version scheme (`<upstream core>+grazij.<counter>`).
 - **Integer/float/date values are emitted correctly.** Upstream splits the
   `read-type` switch into separate `case` clauses, so those types produce a
   valueless `defaults write` that fails with "Rep argument is not a dictionary"
@@ -86,11 +86,13 @@ Usage of plistwatch:
 Invalid glob patterns (e.g. an unclosed `[`) are rejected at startup with an error.
 
 `plistwatch --version` prints the version and exits. The scheme is
-`<upstream-date>-grazij/<N>`: the commit date of the newest
+`<upstream core>+grazij.<counter>`, the same one the sibling
+[duti](https://github.com/grazij/duti) fork uses. Upstream tags no releases, so
+the core is the commit date of the newest
 [catilac/plistwatch](https://github.com/catilac/plistwatch) commit this fork
-contains, plus a fork release number.
-Release git tags encode the same version with dots only (e.g. `v2025.9.24.1`),
-which is the version Homebrew reports.
+contains; the counter is the fork release number. The release git tag is the
+version prefixed with `v` (e.g. `v2025.09.24+grazij.3`), and that is the version
+Homebrew reports.
 
 Examples:
 - Hide annoying settings domains

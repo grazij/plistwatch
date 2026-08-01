@@ -28,7 +28,7 @@ Do not use `./...`: the vendored `go-plist/cmd/` tools and one example test impo
 
 Two Go files make up the entire tool:
 
-- `main.go` — flag parsing (`--filter`/`-f`, comma-separated domain globs, `!` prefix excludes, matched case-insensitively via `filepath.Match`; malformed glob patterns are rejected at parse time; `--version`/`-v` prints the version and exits; short/long forms are separate stdlib-flag registrations sharing one variable/closure), the 1-second poll loop, and `filterDomains` which prunes the top-level domain map before diffing. The `version` const uses the scheme `<upstream-date>-grazij/<N>` — commit date of the newest upstream (catilac/plistwatch master) commit this fork contains, plus a fork release number; bump the date on upstream syncs, increment `<N>` for fork-only releases.
+- `main.go` — flag parsing (`--filter`/`-f`, comma-separated domain globs, `!` prefix excludes, matched case-insensitively via `filepath.Match`; malformed glob patterns are rejected at parse time; `--version`/`-v` prints the version and exits; short/long forms are separate stdlib-flag registrations sharing one variable/closure), the 1-second poll loop, and `filterDomains` which prunes the top-level domain map before diffing. The `version` const uses the scheme `<upstream core>+grazij.<counter>`, shared with the sibling `../duti` fork. Upstream tags no releases, so the core is the commit date of the newest upstream (catilac/plistwatch master) commit this fork contains; bump the core on upstream syncs, increment the counter for fork-only releases. It is the single source of truth — the Makefile's `VERSION ?=` and the formula's `version` line must be kept in step by hand.
 - `diff.go` — `Diff(prev, curr)` walks the two-level structure (domain → keys) and prints `defaults` commands for added/changed/deleted domains and keys. It shells out to `defaults read-type` to decide the value flag (`-bool`, `-integer`, etc.) and uses `cmp` for deep equality of plist values. Values are serialized back to OpenStep format via the plist library's `plist.Marshal(v, plist.OpenStepFormat)`. Three pure helpers do the formatting:
   - `valueArg(typ, s)` — maps a `read-type` name plus marshaled value to the command's value argument. **`case "integer", "float", "date":` must stay one clause**: Go has no implicit fallthrough, and splitting it (as upstream did) leaves the value empty, emitting a valueless `defaults write` that fails with "Rep argument is not a dictionary" — upstream issue #9.
   - `shellQuote(s)` — single-quotes a value, escaping embedded `'` as `'\''`. Any value containing an apostrophe would otherwise produce a command the shell rejects.
@@ -50,13 +50,21 @@ To upgrade: fetch `upstream` in `../plist` and review changes since the base com
 
 `Formula/plistwatch.rb` is the Homebrew formula; it installs from the tagged GitHub
 tarball and is mirrored into `git@github.com:grazij/homebrew-tap.git` (expected
-cloned at `../homebrew-tap`) by `make formula`. Release tags use the `version`
-const's scheme with dots only: `2025.09.24-grazij/1` ⇒ tag `v2025.9.24.1`; Homebrew
-derives its version from the tag. Flow: bump the `version` const if needed, commit,
+cloned at `../homebrew-tap`) by `make formula`. The release tag is the `version`
+const with a `v` prefix and the `+` intact: `2025.09.24+grazij.3` ⇒ tag
+`v2025.09.24+grazij.3`. Flow: bump the `version` const if needed, commit,
 `git tag v<X> && git push origin main --tags`, then `make formula VERSION=<X>` and
-sanity-check with `make formula-verify`. The formula's `url`/`sha256` lines are
-rewritten by sed — keep their exact formatting. Also bump the Makefile's
+sanity-check with `make formula-verify`. The formula's `url`/`version`/`sha256`
+lines are rewritten by sed — keep their exact formatting. Also bump the Makefile's
 `VERSION ?=` default so a bare `make formula` targets the new release.
+
+Version-specific gotchas, inherited from `../duti`, which uses the same scheme:
+
+- **The tarball URL must encode `+` as `%2B`.** A literal `+` in a URL path is
+  ambiguous enough that GitHub's redirects mishandle it. The Makefile's
+  `TAG_PATH` does the substitution; the git tag keeps the literal `+`.
+- **Homebrew's `Version.detect` reads a `+grazij.N` tarball name as `1`**, so the
+  formula pins `version` by hand and `livecheck` needs the explicit regex.
 
 Gotchas hit in practice:
 

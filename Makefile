@@ -1,5 +1,8 @@
 BINARY = plistwatch
-VERSION ?= 2025.9.24.2
+VERSION ?= 2025.09.24+grazij.3
+# A literal + in a URL path is ambiguous enough that GitHub's redirects
+# mishandle it; %2B is not. The git tag itself keeps the literal +.
+TAG_PATH = v$(subst +,%2B,$(VERSION))
 PREFIX ?= /usr/local
 
 # Homebrew tap location and GitHub coordinates used by the `formula` target.
@@ -45,7 +48,7 @@ formula:
 		echo "error: $(TAP_DIR)/Formula not found (override with TAP_DIR=...)" >&2; \
 		exit 1; \
 	fi; \
-	tarball="https://github.com/$(GITHUB_USER)/$(GITHUB_REPO)/archive/refs/tags/v$(VERSION).tar.gz"; \
+	tarball="https://github.com/$(GITHUB_USER)/$(GITHUB_REPO)/archive/refs/tags/$(TAG_PATH).tar.gz"; \
 	echo "    fetching $$tarball"; \
 	tmp=$$(mktemp); \
 	curl -fsSL "$$tarball" -o "$$tmp"; \
@@ -57,8 +60,11 @@ formula:
 	fi; \
 	echo "    sha256: $$sha"; \
 	sed -i.bak -E "s|^(  url )\".*\"|\1\"$$tarball\"|" Formula/plistwatch.rb; \
+	sed -i.bak -E "s|^(  version )\".*\"|\1\"$(VERSION)\"|" Formula/plistwatch.rb; \
 	sed -i.bak -E "s|^(  sha256 )\".*\"|\1\"$$sha\"|" Formula/plistwatch.rb; \
 	rm -f Formula/plistwatch.rb.bak; \
+	grep -q "^  version \"$(VERSION)\"$$" Formula/plistwatch.rb || \
+		{ echo "error: version line not rewritten in Formula/plistwatch.rb" >&2; exit 1; }; \
 	git add Formula/plistwatch.rb; \
 	git commit -m "chore(formula): bump to v$(VERSION)"; \
 	git push origin main; \
