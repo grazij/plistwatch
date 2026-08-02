@@ -1,7 +1,10 @@
 # Homebrew distribution for plistwatch
 
 **Date:** 2026-07-28
-**Status:** Approved approach A (mirror pathset's Formula/ + Makefile publish workflow)
+**Status:** Historical. Implemented, then partly superseded on 2026-08-01: the
+Makefile no longer touches the tap at all (no `TAP_DIR`, no tap commit/push, no
+`formula-verify`). `make formula` only rewrites and pushes `Formula/plistwatch.rb`
+here; copying it into `grazij/homebrew-tap` is manual, matching the `../duti` fork.
 
 ## Goal
 

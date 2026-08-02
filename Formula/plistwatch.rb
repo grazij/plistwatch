@@ -1,10 +1,16 @@
 # Homebrew formula for plistwatch.
 #
+# This file is authored here and copied into grazij/homebrew-tap by hand;
+# nothing in this repo reads from or pushes to the tap.
+#
 # To publish:
-#   1. Tag a release (e.g. v2025.09.24+grazij.3) and push to GitHub.
+#   1. Tag a release (e.g. v2025.09.24+grazij.3) and push it to GitHub, then
+#      `gh release create` it — livecheck reads /releases/latest, not tags.
 #   2. Run `make formula VERSION=2025.09.24+grazij.3` from the project root — it
-#      bumps `url`, `version` and `sha256` here, mirrors the file to
-#      ../homebrew-tap, and pushes both repos. Users then run:
+#      bumps `url`, `version` and `sha256` here and pushes that commit.
+#   3. Copy this file into the tap checkout by hand, `chmod 644` the copy (git
+#      records 644, but a cp under an 077 umask yields 600 and `brew style`
+#      rejects that), commit and push there. Users then run:
 #        brew tap grazij/tap
 #        brew install grazij/tap/plistwatch
 #
@@ -14,10 +20,11 @@
 #
 # To test edits to this file before publishing: current Homebrew rejects any
 # formula outside a tap ("Homebrew requires formulae to be in a tap"), so both
-# `brew style` and `brew install` on this path fail. Work through the tapped
-# clone instead — note that is a separate checkout from ../homebrew-tap, and
+# `brew style` and `brew install` on this path fail. Work through Homebrew's own
+# tapped clone instead — a separate checkout from the tap repo you push to, and
 # `brew update` will reset it:
 #   cp Formula/plistwatch.rb "$(brew --repository grazij/tap)/Formula/"
+#   chmod 644 "$(brew --repository grazij/tap)/Formula/plistwatch.rb"
 #   brew style --formula grazij/tap/plistwatch
 #   brew install --build-from-source grazij/tap/plistwatch
 #   git -C "$(brew --repository grazij/tap)" checkout -- Formula/plistwatch.rb

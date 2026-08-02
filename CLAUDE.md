@@ -17,8 +17,7 @@ go test .                   # run the root-package unit tests (never `./...`)
 make build                  # same as go build .
 make universal              # same as ./build-macos-universal.sh
 ./bump-fork-version.sh      # increment the fork counter in main.go + Makefile, print the new version
-make formula VERSION=X.Y.Z  # publish Formula/plistwatch.rb to the grazij/homebrew-tap repo (tag vX.Y.Z must be pushed)
-make formula-verify         # end-to-end tap install sanity check
+make formula VERSION=X.Y.Z  # rewrite url/version/sha256 in Formula/plistwatch.rb and push (tag vX.Y.Z must be pushed first)
 ```
 
 Do not use `./...`: the vendored `go-plist/cmd/` tools and one example test import `howett.net/plist` and third-party modules that are not in `go.mod`, so `go build ./...` and `go test ./go-plist` fail (test setup error) — this predates all local work and is not worth fixing in third-party code.
@@ -49,17 +48,19 @@ To upgrade: fetch `upstream` in `../plist` and review changes since the base com
 
 ## Releasing (Homebrew)
 
-`Formula/plistwatch.rb` is the Homebrew formula; it installs from the tagged GitHub
-tarball and is mirrored into `git@github.com:grazij/homebrew-tap.git` (expected
-cloned at `../homebrew-tap`) by `make formula`. The release tag is the `version`
-const with a `v` prefix and the `+` intact: `2025.09.24+grazij.3` ⇒ tag
+`Formula/plistwatch.rb` is authored here and installs from the tagged GitHub
+tarball. **It is copied into `grazij/homebrew-tap` by hand — nothing in this repo
+reads from, writes to or pushes to the tap**, and no target should be given a
+`TAP_DIR` again (same rule as the sibling `../duti` fork). The release tag is the
+`version` const with a `v` prefix and the `+` intact: `2025.09.24+grazij.3` ⇒ tag
 `v2025.09.24+grazij.3`. Flow: `./bump-fork-version.sh` (or edit the `version` const by hand for an upstream-core change), commit,
 `git tag v<X> && git push origin main --tags`, `gh release create v<X>` (livecheck's
 `:github_latest` strategy reads `/releases/latest`, so a bare tag leaves
 `brew livecheck` failing with `GitHub::API::HTTPNotFoundError`), then
-`make formula VERSION=<X>` and sanity-check with `make formula-verify`. The formula's `url`/`version`/`sha256`
-lines are rewritten by sed — keep their exact formatting. Also bump the Makefile's
-`VERSION ?=` default so a bare `make formula` targets the new release.
+`make formula VERSION=<X>`, then copy the formula into the tap by hand. The formula's
+`url`/`version`/`sha256` lines are rewritten by sed — keep their exact formatting.
+Also bump the Makefile's `VERSION ?=` default so a bare `make formula` targets the
+new release (`./bump-fork-version.sh` does this).
 
 Version-specific gotchas, inherited from `../duti`, which uses the same scheme:
 
@@ -71,30 +72,28 @@ Version-specific gotchas, inherited from `../duti`, which uses the same scheme:
 
 Gotchas hit in practice:
 
-- **`make formula` never pulls the tap.** If `../homebrew-tap` is behind its remote
-  the push fails after the local commits are already made; `git -C ../homebrew-tap
-  pull --rebase origin main` and push again. The tap push retries
-  `PUSH_RETRIES` (3) times `PUSH_RETRY_DELAY` (5s) apart, which covers the
-  transient `Connection closed by ... port 22` from GitHub but not a behind tap —
-  that one fails all three times and the error says so.
+- **`chmod 644` the formula after copying it into the tap.** Git records 644, but a
+  `cp` or checkout under an 077 umask yields 600, which `brew style`/`brew audit`
+  reject. Applies to Homebrew's own tapped clone too — a `git reset --hard` there
+  recreates the file under the same umask.
 - **Never `brew untap grazij/tap` to refresh it.** It refuses while any formula from
-  that tap is installed — duti lives in the same tap — so the old
-  `brew untap ... || true` in `formula-verify` silently left a stale clone and
-  verified the *previous* release. The target now fetches and hard-resets the tap
-  clone and asserts `plistwatch --version` equals `$(VERSION)`.
-- **`chmod 644` the formula copied into the tap.** Git records 644, but a `cp` or
-  checkout under an 077 umask yields 600, which `brew style`/`brew audit` reject.
-  Both `make formula` and `make formula-verify` do this — the latter's
-  `git reset --hard` recreates the file under the same umask, so a `brew style`
-  run right after it would otherwise fail on permissions alone.
+  that tap is installed — duti lives in the same tap. A stale tapped clone will
+  install the *previous* release while looking like a success; refresh it with
+  `git -C "$(brew --repository grazij/tap)" fetch origin main && git -C ... reset
+  --hard origin/main` before verifying an install, and check `plistwatch --version`
+  against the release you meant to test.
+- **Verify by hand after the tap copy:** `brew install grazij/tap/plistwatch` (or
+  `brew upgrade` if it is already installed), confirm `plistwatch --version`, then
+  `brew uninstall plistwatch`. There is deliberately no `make` target for this —
+  it touches the tap.
 - **Testing formula edits needs a tap.** Current Homebrew rejects any formula
   outside one, so `brew style --formula Formula/plistwatch.rb` and
   `brew install --build-from-source ./Formula/plistwatch.rb` both fail with
   "Homebrew requires formulae to be in a tap". Copy the file into
   `$(brew --repository grazij/tap)/Formula/` and lint/build via
   `grazij/tap/plistwatch`, then `git checkout` it there. That tapped clone is a
-  *third* checkout — separate from both this repo and `../homebrew-tap` — and
-  `brew update` resets it.
+  *third* checkout — separate from both this repo and whatever tap checkout the
+  manual copy goes through — and `brew update` resets it.
 - **Don't pass `ldflags: "-s -w"` to `std_go_args`.** It already prepends `-s -w`,
   so passing them again yields `-ldflags=-s -w -s -w` and overrides the
   `--debug-symbols` opt-out. Plain `*std_go_args` is correct.
