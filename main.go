@@ -19,7 +19,7 @@ import (
 // catilac/plistwatch master commit this fork contains (currently cd0de73). The
 // core moves by hand on an upstream sync; the counter moves on every fork
 // release. The git tag is this string prefixed with "v".
-const version = "2025.09.24+grazij.3"
+const version = "2025.09.24+grazij.4"
 
 func getDefaults() (bytes.Buffer, error) {
 	var out bytes.Buffer
