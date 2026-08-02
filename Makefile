@@ -90,6 +90,7 @@ formula-verify:
 	tap_dir=$$(brew --repository $(GITHUB_USER)/tap); \
 	git -C "$$tap_dir" fetch origin main; \
 	git -C "$$tap_dir" reset --hard origin/main; \
+	chmod 644 "$$tap_dir/Formula/$(BINARY).rb"; \
 	brew install $(GITHUB_USER)/tap/$(BINARY) || \
 		brew upgrade $(GITHUB_USER)/tap/$(BINARY); \
 	got=$$($(BINARY) --version); \

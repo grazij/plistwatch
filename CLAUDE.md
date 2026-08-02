@@ -81,7 +81,9 @@ Gotchas hit in practice:
   clone and asserts `plistwatch --version` equals `$(VERSION)`.
 - **`chmod 644` the formula copied into the tap.** Git records 644, but a `cp` or
   checkout under an 077 umask yields 600, which `brew style`/`brew audit` reject.
-  `make formula` does this; the tapped clone may still need it by hand.
+  Both `make formula` and `make formula-verify` do this — the latter's
+  `git reset --hard` recreates the file under the same umask, so a `brew style`
+  run right after it would otherwise fail on permissions alone.
 - **Testing formula edits needs a tap.** Current Homebrew rejects any formula
   outside one, so `brew style --formula Formula/plistwatch.rb` and
   `brew install --build-from-source ./Formula/plistwatch.rb` both fail with
