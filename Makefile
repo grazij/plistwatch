@@ -1,5 +1,5 @@
 BINARY = plistwatch
-VERSION ?= 2025.09.24+grazij.3
+VERSION ?= 2025.09.24+grazij.4
 # A literal + in a URL path is ambiguous enough that GitHub's redirects
 # mishandle it; %2B is not. The git tag itself keeps the literal +.
 TAG_PATH = v$(subst +,%2B,$(VERSION))
