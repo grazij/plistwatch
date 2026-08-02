@@ -25,9 +25,9 @@
 class Plistwatch < Formula
   desc "Watch macOS defaults and print the commands that recreate each change"
   homepage "https://github.com/grazij/plistwatch"
-  url "https://github.com/grazij/plistwatch/archive/refs/tags/v2025.09.24%2Bgrazij.3.tar.gz"
-  version "2025.09.24+grazij.3"
-  sha256 "6cf63de4692d38c4f6996fa098f595a5a4c175a07b42fd3d3ffbbf7952a837ad"
+  url "https://github.com/grazij/plistwatch/archive/refs/tags/v2025.09.24%2Bgrazij.4.tar.gz"
+  version "2025.09.24+grazij.4"
+  sha256 "0fbb0d6cb82662c5214037c09cb2c838f7efbe2d83efe998fe14854e62546dce"
   license "MIT"
   head "https://github.com/grazij/plistwatch.git", branch: "main"
 
