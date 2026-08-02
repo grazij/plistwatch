@@ -27,8 +27,6 @@ It contains everything in upstream `master` (as of `cd0de73`, 2025-09-24) plus:
 - **Unit tests** (`diff_test.go`) for the value-formatting helpers.
 - **Distribution** — Homebrew tap (`grazij/tap`), a `Makefile`, and
   `build-macos-universal.sh` for a fat Intel + Apple Silicon binary.
-- **Module path renamed** to `github.com/grazij/plistwatch`, so `go install`
-  installs this fork rather than upstream.
 
 ## Install
 
@@ -84,16 +82,6 @@ Usage of plistwatch:
 ```
 
 Invalid glob patterns (e.g. an unclosed `[`) are rejected at startup with an error.
-
-`plistwatch --version` prints the version and exits. The scheme is
-`<upstream core>+grazij.<counter>`, the same one the sibling
-[duti](https://github.com/grazij/duti) fork uses. Upstream tags no releases, so
-the core is the commit date of the newest
-[catilac/plistwatch](https://github.com/catilac/plistwatch) commit this fork
-contains; the counter is the fork release number. The release git tag is the
-version prefixed with `v` (e.g. `v2025.09.24+grazij.3`), and that is the version
-Homebrew reports. `./bump-fork-version.sh` increments the counter (in `main.go`
-and the `Makefile`) and prints the new version; the core is changed by hand.
 
 Examples:
 - Hide annoying settings domains
