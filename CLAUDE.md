@@ -73,7 +73,10 @@ Gotchas hit in practice:
 
 - **`make formula` never pulls the tap.** If `../homebrew-tap` is behind its remote
   the push fails after the local commits are already made; `git -C ../homebrew-tap
-  pull --rebase origin main` and push again.
+  pull --rebase origin main` and push again. The tap push retries
+  `PUSH_RETRIES` (3) times `PUSH_RETRY_DELAY` (5s) apart, which covers the
+  transient `Connection closed by ... port 22` from GitHub but not a behind tap —
+  that one fails all three times and the error says so.
 - **Never `brew untap grazij/tap` to refresh it.** It refuses while any formula from
   that tap is installed — duti lives in the same tap — so the old
   `brew untap ... || true` in `formula-verify` silently left a stale clone and

@@ -12,6 +12,12 @@ TAP_DIR ?= ../homebrew-tap
 GITHUB_USER ?= grazij
 GITHUB_REPO ?= plistwatch
 
+# The tap push is the last step of `formula` and the one that has actually failed
+# in practice (transient "Connection closed by ... port 22" from GitHub), leaving
+# the commit stranded locally. Retry it.
+PUSH_RETRIES ?= 3
+PUSH_RETRY_DELAY ?= 5
+
 .PHONY: all build vet clean install uninstall universal formula formula-verify
 
 all: build
@@ -70,11 +76,22 @@ formula:
 	git push origin main; \
 	cp Formula/plistwatch.rb "$(TAP_DIR)/Formula/plistwatch.rb"; \
 	chmod 644 "$(TAP_DIR)/Formula/plistwatch.rb"; \
-	cd "$(TAP_DIR)" && \
-		git add Formula/plistwatch.rb && \
-		git diff --cached --stat && \
-		git commit -m "$(BINARY) $(VERSION)" && \
-		git push origin main; \
+	cd "$(TAP_DIR)"; \
+	git add Formula/plistwatch.rb; \
+	git diff --cached --stat; \
+	git commit -m "$(BINARY) $(VERSION)"; \
+	attempt=1; \
+	until git push origin main; do \
+		if [ "$$attempt" -ge "$(PUSH_RETRIES)" ]; then \
+			echo "error: tap push failed after $(PUSH_RETRIES) attempts; the commit is" >&2; \
+			echo "       local in $(TAP_DIR). If the tap is behind its remote, run" >&2; \
+			echo "       git -C $(TAP_DIR) pull --rebase origin main and push again." >&2; \
+			exit 1; \
+		fi; \
+		echo "    tap push failed, retrying in $(PUSH_RETRY_DELAY)s ($$attempt/$(PUSH_RETRIES))"; \
+		sleep $(PUSH_RETRY_DELAY); \
+		attempt=$$((attempt + 1)); \
+	done; \
 	echo "==> formula published to $(GITHUB_USER)/homebrew-tap"; \
 	echo "    sanity check: make formula-verify"
 
