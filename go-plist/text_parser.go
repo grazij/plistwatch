@@ -302,21 +302,10 @@ func (p *textPlistParser) parseQuotedString() cfString {
 				return cfString(s)
 			}
 		case '\\':
-
 			slowPath = true
 			s += p.emit()
-
-			// Escaping a backslash is the only thing that is correctly stored and represented in `defaults`
-			if p.pos+4 <= len(p.input) && p.input[p.pos:p.pos+4] == "\\\\\\\\" {
-				p.pos += 4
-				p.ignore()
-				s += "\\"
-			} else {
-				// everything else is incorrectly encoded with one additional backslash \\"
-				p.next() // consume \
-				p.next() // consume \
-				s += p.parseEscape()
-			}
+			p.next() // consume \
+			s += p.parseEscape()
 		}
 	}
 }

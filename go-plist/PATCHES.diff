@@ -9,10 +9,7 @@
 #   - plist.go:          new DefaultsFormat constant (format 5) for the
 #                        not-quite-OpenStep output of `defaults read`
 #   - text_parser.go:    parse the `{length = N, bytes = 0x...}` byte-summary
-#                        blobs `defaults` prints for binary data; work around
-#                        `defaults`' extra-backslash escaping in quoted
-#                        strings (with a bounds check so a trailing `\` near
-#                        EOF errors instead of panicking)
+#                        blobs `defaults` prints for binary data
 #   - text_generator.go: emit \t \r \n as escape sequences, not raw control
 #                        characters, so printed commands are copy-pasteable
 #   - deleted (not in this diff): .github/workflows/ci.yml, .gitlab-ci.yml,
@@ -78,31 +75,7 @@ index 5640183..082a432 100644
  	"runtime"
  	"strings"
  	"time"
-@@ -301,10 +302,21 @@ func (p *textPlistParser) parseQuotedString() cfString {
- 				return cfString(s)
- 			}
- 		case '\\':
-+
- 			slowPath = true
- 			s += p.emit()
--			p.next() // consume \
--			s += p.parseEscape()
-+
-+			// Escaping a backslash is the only thing that is correctly stored and represented in `defaults`
-+			if p.pos+4 <= len(p.input) && p.input[p.pos:p.pos+4] == "\\\\\\\\" {
-+				p.pos += 4
-+				p.ignore()
-+				s += "\\"
-+			} else {
-+				// everything else is incorrectly encoded with one additional backslash \\"
-+				p.next() // consume \
-+				p.next() // consume \
-+				s += p.parseEscape()
-+			}
- 		}
- 	}
- }
-@@ -319,6 +331,13 @@ func (p *textPlistParser) parseUnquotedString() cfString {
+@@ -319,6 +320,13 @@ func (p *textPlistParser) parseUnquotedString() cfString {
  	return cfString(s)
  }
  
@@ -116,7 +89,7 @@ index 5640183..082a432 100644
  // the { has already been consumed
  func (p *textPlistParser) parseDictionary(ignoreEof bool) cfValue {
  	//p.ignore() // ignore the {
-@@ -547,6 +566,9 @@ func (p *textPlistParser) parseHexData() cfData {
+@@ -547,6 +555,9 @@ func (p *textPlistParser) parseHexData() cfData {
  }
  
  func (p *textPlistParser) parsePlistValue() cfValue {
@@ -126,7 +99,7 @@ index 5640183..082a432 100644
  	for {
  		p.skipWhitespaceAndComments()
  
-@@ -568,6 +590,12 @@ func (p *textPlistParser) parsePlistValue() cfValue {
+@@ -568,6 +579,12 @@ func (p *textPlistParser) parsePlistValue() cfValue {
  		case '"':
  			return p.parseQuotedString()
  		case '{':

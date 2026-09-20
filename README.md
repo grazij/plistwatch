@@ -21,10 +21,12 @@ It contains everything in upstream `master` (as of `cd0de73`, 2025-09-24) plus:
   produces a command the shell rejects.
 - **Type fallback when `defaults read-type` fails**, so numbers are not rewritten
   as strings.
-- **Vendored `go-plist` updated** to upstream `ee69052` (2025-03-14), with a
-  trailing-backslash parser panic fixed and all local patches documented in
+- **Vendored `go-plist` updated** to upstream `ee69052` (2025-03-14), with
+  quoted-string escapes read the way `defaults` actually writes them (a single
+  backslash before `"` or `\`), and all local patches documented in
   `go-plist/PATCHES.diff`.
-- **Unit tests** (`diff_test.go`) for the value-formatting helpers.
+- **Unit tests** (`diff_test.go`, `escape_test.go`) for the value-formatting
+  helpers and `defaults`-style string escapes.
 - **Distribution** — Homebrew tap (`grazij/tap`), a `Makefile`, and
   `build-macos-universal.sh` for a fat Intel + Apple Silicon binary.
 
