@@ -79,6 +79,9 @@ func main() {
 	flag.BoolVar(&quiet, "quiet", false, "print only the defaults commands: no filter banner, no excluded-domain notices")
 	flag.BoolVar(&quiet, "q", false, "shorthand for --quiet")
 
+	var configPath string
+	flag.StringVar(&configPath, "config", "", "read the persistent filters from this `file` instead of the default one")
+
 	flag.Func("filter", "a comma-separated list of `domains`. Prefix names with \"!\" to exclude them. Supports globbing.", cliFilters.add)
 	flag.Func("f", "shorthand for --filter", cliFilters.add)
 	flag.Parse()
@@ -90,12 +93,7 @@ func main() {
 
 	// Persistent filters live in a file and merge with --filter, so an
 	// exclusion set once stays in force for one-off filtered runs.
-	path, err := filtersPath()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
-	}
-	fileFilters, err := loadFilters(path)
+	path, fileFilters, err := resolveFilters(configPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)

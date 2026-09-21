@@ -14,7 +14,8 @@ It contains everything in upstream `master` (as of `cd0de73`, 2025-09-24) plus:
 - **Invalid glob patterns are rejected at startup** instead of silently never matching.
 - **Persistent filters** — `$XDG_CONFIG_HOME/plistwatch/filters` (or
   `~/.config/plistwatch/filters`), with `#` comments; the filters in force are
-  announced at startup as `#` comment lines.
+  announced at startup as `#` comment lines. `--config <path>` reads an
+  alternate file instead of the default one.
 - **Excluded domains are still announced** — a change to an excluded domain
   prints `# defaults write "<domain>"`, with no keys and no values, so a
   silenced domain is not silently missed.
@@ -85,6 +86,8 @@ with its original type preserved.
 The output can also be filtered:
 ```
 Usage of plistwatch:
+  --config file
+    	read the persistent filters from this file instead of the default one
   -f, --filter domains
     	a comma-separated list of domains. Prefix names with "!" to exclude them. Supports globbing.
   -q, --quiet
@@ -121,6 +124,17 @@ optional; a missing one simply means no persistent filters.
 - The file and `--filter` **merge**: an exclusion set in the file stays in force
   during a one-off filtered run.
 - An invalid glob is rejected at startup with the file and line number.
+
+`--config <path>` reads that file **instead of** the default one, so an
+alternate filter set needs no editing or moving of `~/.config/plistwatch/filters`:
+
+```
+plistwatch --config ./dock-only.filters
+```
+
+It still merges with `--filter`, and the banner names it as the source. Unlike
+the default file, a `--config` path that does not exist is an error at startup:
+the path was named explicitly, so a typo must not quietly watch everything.
 
 The filters in force are announced before watching starts, one line per source.
 The lines are shell comments, so the output stays pasteable as a script:

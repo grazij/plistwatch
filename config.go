@@ -94,6 +94,26 @@ func loadFilters(path string) (filterSet, error) {
 	return f, nil
 }
 
+// resolveFilters picks the persistent filters file and reads it. An explicit
+// --config path replaces the default one rather than adding to it, so
+// filtersPath() is not consulted at all when one is given. A path named on the
+// command line has to exist: a typo there would otherwise silently watch
+// everything. A missing default file stays the "no persistent filters" case.
+func resolveFilters(config string) (string, filterSet, error) {
+	path := config
+	if path == "" {
+		var err error
+		if path, err = filtersPath(); err != nil {
+			return "", filterSet{}, err
+		}
+	} else if _, err := os.Stat(path); err != nil {
+		return "", filterSet{}, fmt.Errorf("--config: %w", err)
+	}
+
+	f, err := loadFilters(path)
+	return path, f, err
+}
+
 // filterBanner announces the filters in force, one block per source: a header
 // naming the source, then the include and exclude patterns, then a blank
 // comment. Exclusions are listed without their "!" prefix, since the Exclude

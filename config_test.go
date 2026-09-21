@@ -136,6 +136,85 @@ func TestFiltersPath(t *testing.T) {
 	})
 }
 
+// writeDefaultFilters points XDG_CONFIG_HOME at a fresh directory, optionally
+// writing a filters file inside it, and returns the path filtersPath() will
+// resolve to. It gives the default file contents no --config file shares, so a
+// test can tell which of the two was read.
+func writeDefaultFilters(t *testing.T, contents string) string {
+	t.Helper()
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	path := filepath.Join(dir, "plistwatch", "filters")
+	if contents == "" {
+		return path
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestResolveFilters(t *testing.T) {
+	t.Run("--config replaces the default file", func(t *testing.T) {
+		writeDefaultFilters(t, "!com.apple.knowledge-agent\n")
+		config := writeFilters(t, "com.apple.dock\n")
+
+		gotPath, got, err := resolveFilters(config)
+		if err != nil {
+			t.Fatalf("resolveFilters() error = %v", err)
+		}
+		if gotPath != config {
+			t.Errorf("resolveFilters() path = %q, want %q", gotPath, config)
+		}
+		assertStrings(t, "include", got.include, []string{"com.apple.dock"})
+		assertStrings(t, "exclude", got.exclude, nil)
+	})
+
+	t.Run("no --config reads the default file", func(t *testing.T) {
+		want := writeDefaultFilters(t, "!com.apple.knowledge-agent\n")
+
+		gotPath, got, err := resolveFilters("")
+		if err != nil {
+			t.Fatalf("resolveFilters() error = %v", err)
+		}
+		if gotPath != want {
+			t.Errorf("resolveFilters() path = %q, want %q", gotPath, want)
+		}
+		assertStrings(t, "exclude", got.exclude, []string{"com.apple.knowledge-agent"})
+	})
+
+	// A path named on the command line was meant, so a typo is fatal rather
+	// than a run that quietly watches everything.
+	t.Run("a missing --config path is an error", func(t *testing.T) {
+		writeDefaultFilters(t, "!com.apple.knowledge-agent\n")
+		missing := filepath.Join(t.TempDir(), "filters")
+
+		_, _, err := resolveFilters(missing)
+		if err == nil {
+			t.Fatal("resolveFilters() error = nil, want an error")
+		}
+		if !strings.Contains(err.Error(), missing) {
+			t.Errorf("resolveFilters() error = %q, want it to name %s", err, missing)
+		}
+	})
+
+	// A missing default file is still just "no persistent filters".
+	t.Run("a missing default file is not an error", func(t *testing.T) {
+		writeDefaultFilters(t, "")
+
+		_, got, err := resolveFilters("")
+		if err != nil {
+			t.Fatalf("resolveFilters() error = %v", err)
+		}
+		if !got.empty() {
+			t.Errorf("resolveFilters() = %+v, want empty", got)
+		}
+	})
+}
+
 // The banner is printed as shell comments so that output stays pasteable, and
 // it names where each filter came from now that the file and --filter merge.
 // Exclusions lose their "!" prefix: the Exclude heading already says what they
