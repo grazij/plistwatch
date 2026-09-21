@@ -93,8 +93,8 @@ $ plistwatch -f "com.apple.dock"
 
 ### Excluded domains are still displayed
 
-A `!`-excluded domain only prints its name and nothing else, 
-so a verbose domain stays quiet without going unnoticed:
+A `!`-excluded domain prints its name and nothing else, so a verbose domain
+stays quiet without going unnoticed:
 
 ```console
 # defaults write "com.apple.spaces"
@@ -102,7 +102,7 @@ defaults write "com.apple.dock" "orientation" 'left'
 ```
 
 A domain that is deleted prints `# defaults delete "<domain>"`. Domains dropped
-for not matching an include pattern are not announced.
+for not matching an include pattern are not displayed.
 
 ### Quiet mode and color
 
@@ -123,7 +123,7 @@ all of upstream `master` (`cd0de73`, 2025-09-24) plus:
 - **Domain filtering** — `--filter`/`-f` with globs and `!` exclusions, from an
   unmerged upstream PR; invalid globs are rejected at startup.
 - **Persistent filters**, with `--config` to point elsewhere.
-- **Excluded domains are still announced**, by name only.
+- **Excluded domains are still displayed**, by name only.
 - **`--quiet`/`-q`**, dimmed comments, and alternating command color.
 - **`--version`/`-v`** and a fork version scheme (`<upstream core>+grazij.<n>`).
 - **Integer, float and date values are emitted correctly.** Upstream produces a
