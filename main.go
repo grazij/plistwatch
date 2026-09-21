@@ -17,7 +17,7 @@ import (
 // Version scheme: <upstream core>+grazij.<counter>
 // Upstream tags no releases, so the core is the commit date of the newest
 // catilac/plistwatch master commit this fork contains (currently cd0de73).
-const version = "2025.09.24+grazij.8"
+const version = "2025.09.24+grazij.9"
 
 func getDefaults() (bytes.Buffer, error) {
 	var out bytes.Buffer
