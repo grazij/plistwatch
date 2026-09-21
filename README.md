@@ -54,6 +54,28 @@ brew install grazij/tap/plistwatch
 go install github.com/grazij/plistwatch@latest
 ```
 
+### Prebuilt release
+
+Each `v*` tag publishes a universal binary to
+[Releases](https://github.com/grazij/plistwatch/releases):
+`plistwatch-<version>-darwin-universal.tar.gz`, with a `SHA256SUMS` alongside it.
+
+```
+tar -xzf plistwatch-*-darwin-universal.tar.gz
+shasum -a 256 -c SHA256SUMS
+```
+
+The binary is **not code-signed or notarized**. macOS quarantines anything a
+browser downloads, so Gatekeeper refuses to run it ("cannot be opened because
+the developer cannot be verified"). Clear the flag before use:
+
+```
+xattr -dr com.apple.quarantine plistwatch
+```
+
+Downloads made with `curl` or `wget` are not quarantined and need no such step,
+and neither do the Homebrew and `go install` routes above.
+
 ### Universal binary (Intel + Apple Silicon)
 
 To build a fat binary that runs natively on both architectures:
