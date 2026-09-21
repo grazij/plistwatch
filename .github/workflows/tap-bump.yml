@@ -6,6 +6,11 @@ on:
   workflow_run:
     workflows: ["Release"]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to bump the formula to, e.g. v2025.09.24+grazij.9
+        required: true
 
 # The only per-repo lines. TAP_TOKEN is a fine-grained PAT on the tap with
 # Contents and Pull requests write.
@@ -17,8 +22,9 @@ jobs:
   bump:
     name: Open a bump PR on the tap
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      startsWith(github.event.workflow_run.head_branch, 'v')
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'v'))
     runs-on: ubuntu-latest
 
     steps:
@@ -40,5 +46,5 @@ jobs:
       - name: Bump the formula
         env:
           GH_TOKEN: ${{ secrets.TAP_TOKEN }}
-          TAG_NAME: ${{ github.event.workflow_run.head_branch }}
+          TAG_NAME: ${{ inputs.tag || github.event.workflow_run.head_branch }}
         run: ./bump.sh -y "$TAP_FORMULA" "${TAG_NAME#v}"
