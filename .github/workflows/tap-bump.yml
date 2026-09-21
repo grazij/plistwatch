@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: ${{ env.TAP_REPO }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.TAP_TOKEN }}
           ref: main
 
       - name: Identify the committer
@@ -39,6 +39,6 @@ jobs:
       # brew test-bot build bottles. It exits 0 if the formula is already there.
       - name: Bump the formula
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.TAP_TOKEN }}
           TAG_NAME: ${{ github.event.workflow_run.head_branch }}
         run: ./bump.sh -y "$TAP_FORMULA" "${TAG_NAME#v}"
