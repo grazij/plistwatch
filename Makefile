@@ -1,5 +1,5 @@
 BINARY = plistwatch
-PREFIX ?= /usr/local
+PREFIX ?= $(HOME)/.local
 DIST = dist
 
 # main.go's version const is the only place the version lives; the release
