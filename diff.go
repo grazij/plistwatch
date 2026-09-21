@@ -57,15 +57,16 @@ func fallbackType(v interface{}) string {
 	return ""
 }
 
-// colorComments dims the comment lines plistwatch prints. It is set at startup
-// and left off unless a terminal is there to render the escapes.
-var colorComments bool
+// colorOutput colours what plistwatch prints: the dimmed comment lines and the
+// alternating runnable commands. It is set at startup and left off unless a
+// terminal is there to render the escapes.
+var colorOutput bool
 
 // dim wraps each line of s in the ANSI bright-black escape, so comments read as
 // secondary next to the runnable `defaults` commands. Each line is closed
 // separately, so a line that is piped or interleaved never leaks the colour.
 func dim(s string) string {
-	if !colorComments || s == "" {
+	if !colorOutput || s == "" {
 		return s
 	}
 	lines := strings.Split(strings.TrimSuffix(s, "\n"), "\n")
@@ -73,6 +74,37 @@ func dim(s string) string {
 		lines[i] = "\x1b[90m" + line + "\x1b[0m"
 	}
 	return strings.Join(lines, "\n") + "\n"
+}
+
+// domainColorer alternates the colour of the runnable `defaults` lines as the
+// domain being written changes, so a burst reads as groups rather than one wall
+// of text. Consecutive lines for one domain keep their colour; the colour flips
+// at a domain boundary. A domain that comes back later may reuse either colour
+// — only neighbours have to differ.
+//
+// The two colours are the terminal's own foreground (no escape at all) and ANSI
+// cyan, both legible on a light and a dark background.
+type domainColorer struct {
+	domain string // the domain the current colour was chosen for
+	alt    bool   // whether that colour is the cyan one
+}
+
+// lineColor carries the alternation across polls, so a domain that keeps
+// changing over several seconds still reads as one group.
+var lineColor domainColorer
+
+// line returns one runnable `defaults` command, without its newline, in the
+// colour that belongs to domain. The command itself is untouched: stripping or
+// disabling the escapes leaves the same pasteable bytes.
+func (c *domainColorer) line(domain string, s string) string {
+	if domain != c.domain {
+		c.domain = domain
+		c.alt = !c.alt
+	}
+	if !colorOutput || !c.alt {
+		return s
+	}
+	return "\x1b[36m" + s + "\x1b[0m"
 }
 
 // excludedChanges reports the excluded domains that moved between two polls, as
@@ -114,7 +146,7 @@ func Diff(d1 map[string]interface{}, d2 map[string]interface{}) error {
 			// check for deleted keys
 			for key, _ := range prev {
 				if _, ok := curr[key]; !ok {
-					fmt.Printf("defaults delete \"%s\" \"%s\"\n", domain, key)
+					fmt.Println(lineColor.line(domain, fmt.Sprintf("defaults delete \"%s\" \"%s\"", domain, key)))
 				}
 			}
 
@@ -136,7 +168,7 @@ func Diff(d1 map[string]interface{}, d2 map[string]interface{}) error {
 						typ = fallbackType(currVal)
 					}
 
-					fmt.Printf("defaults write \"%s\" \"%s\" %s\n", domain, key, valueArg(typ, *s))
+					fmt.Println(lineColor.line(domain, fmt.Sprintf("defaults write \"%s\" \"%s\" %s", domain, key, valueArg(typ, *s))))
 				}
 			}
 		} else {
@@ -144,14 +176,14 @@ func Diff(d1 map[string]interface{}, d2 map[string]interface{}) error {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("defaults write \"%s\" %s\n", domain, shellQuote(*s))
+			fmt.Println(lineColor.line(domain, fmt.Sprintf("defaults write \"%s\" %s", domain, shellQuote(*s))))
 		}
 	}
 
 	// check for deletions
 	for domain, _ := range d1 {
 		if _, ok := d2[domain]; !ok {
-			fmt.Printf("defaults delete \"%s\"\n", domain)
+			fmt.Println(lineColor.line(domain, fmt.Sprintf("defaults delete \"%s\"", domain)))
 		}
 	}
 

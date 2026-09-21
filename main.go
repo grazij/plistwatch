@@ -104,7 +104,7 @@ func main() {
 
 	// NO_COLOR (https://no-color.org) and a redirected stdout both mean the
 	// escapes would be noise rather than colour.
-	colorComments = !quiet && isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == ""
+	colorOutput = !quiet && isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == ""
 
 	if !quiet {
 		fmt.Print(dim(filterBanner(path, fileFilters, cliFilters)))

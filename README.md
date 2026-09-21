@@ -175,11 +175,19 @@ pattern are not: under `-f "com.apple.dock"` that would be most of the system.
 ### Quiet mode and colour
 
 `--quiet`/`-q` prints only the runnable `defaults` commands — no banner, no
-excluded-domain notices.
+excluded-domain notices, and no colour.
 
-Comment lines are dimmed (ANSI bright black) when stdout is a terminal.
-Redirected output, and `NO_COLOR` in the environment
-([no-color.org](https://no-color.org)), leave them plain.
+Comment lines are dimmed (ANSI bright black). The runnable commands alternate
+between the terminal's own foreground colour and cyan as the domain changes, so
+a burst reads as groups rather than one wall of text: consecutive lines for one
+domain keep their colour — across polls too — and the colour flips at a domain
+boundary. A domain that comes back later may reuse either colour; only
+neighbours differ.
+
+Colour is used only when stdout is a terminal. Redirected output, `--quiet`, and
+`NO_COLOR` in the environment ([no-color.org](https://no-color.org)) leave every
+line plain. The commands themselves are the same bytes either way: the escapes
+wrap a line, they never change it, so the output stays pasteable.
 
 ## Vendored go-plist
 

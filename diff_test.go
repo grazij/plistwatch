@@ -208,19 +208,84 @@ func TestExcludedChanges(t *testing.T) {
 // commands, but only when a terminal is there to render it: redirected output
 // must stay pasteable.
 func TestDim(t *testing.T) {
-	t.Cleanup(func() { colorComments = false })
+	t.Cleanup(func() { colorOutput = false })
 
-	colorComments = false
+	colorOutput = false
 	if got := dim("# one\n# two\n"); got != "# one\n# two\n" {
 		t.Errorf("dim() without color = %q, want it unchanged", got)
 	}
 
-	colorComments = true
+	colorOutput = true
 	want := "\x1b[90m# one\x1b[0m\n\x1b[90m# two\x1b[0m\n"
 	if got := dim("# one\n# two\n"); got != want {
 		t.Errorf("dim() = %q, want %q", got, want)
 	}
 	if got := dim(""); got != "" {
 		t.Errorf("dim(\"\") = %q, want empty", got)
+	}
+}
+
+// Runnable commands alternate between the terminal's own foreground and cyan as
+// the domain changes, so a burst of them reads as groups. The colour holds for
+// consecutive lines of one domain and flips at the boundary; a domain that
+// comes back later may reuse either colour.
+func TestDomainColorerLine(t *testing.T) {
+	t.Cleanup(func() { colorOutput = false })
+	colorOutput = true
+
+	tests := []struct {
+		name    string
+		domains []string
+		// alt[i] says whether line i is the cyan one.
+		alt []bool
+	}{
+		{
+			name:    "consecutive lines of one domain share a colour",
+			domains: []string{"a", "a", "a"},
+			alt:     []bool{true, true, true},
+		},
+		{
+			name:    "the colour flips at a domain boundary",
+			domains: []string{"a", "b", "b", "c"},
+			alt:     []bool{true, false, false, true},
+		},
+		{
+			// Only neighbours have to differ: "a" is cyan both times here,
+			// and need not have been.
+			name:    "a returning domain may reuse either colour",
+			domains: []string{"a", "b", "a"},
+			alt:     []bool{true, false, true},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var c domainColorer
+			for i, domain := range tt.domains {
+				const cmd = `defaults write "x" "k" 'v'`
+				want := cmd
+				if tt.alt[i] {
+					want = "\x1b[36m" + cmd + "\x1b[0m"
+				}
+				if got := c.line(domain, cmd); got != want {
+					t.Errorf("line %d (domain %q) = %q, want %q", i, domain, got, want)
+				}
+			}
+		})
+	}
+}
+
+// The alternation runs on the same gate as the dimmed comments: with colour off
+// the commands come out byte-identical, so redirected output stays pasteable.
+func TestDomainColorerLineWithoutColor(t *testing.T) {
+	t.Cleanup(func() { colorOutput = false })
+	colorOutput = false
+
+	var c domainColorer
+	const cmd = `defaults write "x" "k" 'v'`
+	for _, domain := range []string{"a", "a", "b", "a"} {
+		if got := c.line(domain, cmd); got != cmd {
+			t.Errorf("line(%q) without color = %q, want it unchanged", domain, got)
+		}
 	}
 }
