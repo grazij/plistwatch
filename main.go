@@ -14,11 +14,9 @@ import (
 	"github.com/grazij/plistwatch/go-plist"
 )
 
-// Version scheme: <upstream core>+grazij.<counter>, matching the sibling duti
-// fork. Upstream tags no releases, so the core is the commit date of the newest
-// catilac/plistwatch master commit this fork contains (currently cd0de73). The
-// core moves by hand on an upstream sync; the counter moves on every fork
-// release. The git tag is this string prefixed with "v".
+// Version scheme: <upstream core>+grazij.<counter>
+// Upstream tags no releases, so the core is the commit date of the newest
+// catilac/plistwatch master commit this fork contains (currently cd0de73).
 const version = "2025.09.24+grazij.8"
 
 func getDefaults() (bytes.Buffer, error) {

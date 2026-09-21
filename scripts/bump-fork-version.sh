@@ -19,7 +19,7 @@ die() {
 	exit 1
 }
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 [ -f "$SOURCE_FILE" ] || die "no such file: $SOURCE_FILE"
 

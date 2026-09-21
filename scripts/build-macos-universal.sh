@@ -3,7 +3,7 @@
 # Requires the Go toolchain and lipo (Xcode command line tools).
 set -euo pipefail
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/plistwatch-build.XXXXXX")"
 trap 'rm -rf "$tmpdir"' EXIT

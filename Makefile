@@ -30,7 +30,7 @@ uninstall:
 
 # Universal (arm64 + x86_64) macOS fat binary at ./plistwatch.
 universal:
-	./build-macos-universal.sh
+	./scripts/build-macos-universal.sh
 
 # Release artifacts in ./dist: a universal tarball and its checksum. The
 # release workflow uploads whatever lands there.

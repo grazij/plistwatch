@@ -1,0 +1,44 @@
+name: Bump Homebrew tap
+
+# Runs after the Release workflow succeeds. It cannot use `on: release`:
+# releases created with GITHUB_TOKEN do not start further workflow runs.
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+
+# The only per-repo lines. TAP_TOKEN is a fine-grained PAT on the tap with
+# Contents and Pull requests write.
+env:
+  TAP_REPO: grazij/homebrew-tap
+  TAP_FORMULA: grazij-plistwatch
+
+jobs:
+  bump:
+    name: Open a bump PR on the tap
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the tap
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.TAP_REPO }}
+          token: ${{ secrets.TAP_TOKEN }}
+          ref: main
+
+      - name: Identify the committer
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      # bump.sh reads the owner and repo from the formula's url, fetches the
+      # tarball GitHub serves for the tag, and opens the PR that lets
+      # brew test-bot build bottles. It exits 0 if the formula is already there.
+      - name: Bump the formula
+        env:
+          GH_TOKEN: ${{ secrets.TAP_TOKEN }}
+          TAG_NAME: ${{ github.event.workflow_run.head_branch }}
+        run: ./bump.sh -y "$TAP_FORMULA" "${TAG_NAME#v}"
