@@ -78,7 +78,7 @@ The file and `--filter` merge. `--config <path>` reads that file instead of the
 default one; unlike the default, a `--config` path that does not exist is an
 error, so a typo cannot quietly watch everything.
 
-The filters in force are announced at startup as `#` comments, so the output
+The filters in use are displayed at startup as `#` comments, so the output
 stays pasteable as a script:
 
 ```console
@@ -91,17 +91,17 @@ $ plistwatch -f "com.apple.dock"
 #
 ```
 
-### Excluded domains are still announced
+### Excluded domains are still displayed
 
-A `!`-excluded domain is silenced, not ignored. A change prints its name and
-nothing else, so a noisy domain stays quiet without going unnoticed:
+A `!`-excluded domain only prints its name and nothing else, 
+so a verbose domain stays quiet without going unnoticed:
 
 ```console
 # defaults write "com.apple.spaces"
 defaults write "com.apple.dock" "orientation" 'left'
 ```
 
-A domain that disappears prints `# defaults delete "<domain>"`. Domains dropped
+A domain that is deleted prints `# defaults delete "<domain>"`. Domains dropped
 for not matching an include pattern are not announced.
 
 ### Quiet mode and color
