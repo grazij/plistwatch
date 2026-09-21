@@ -57,14 +57,13 @@ func fallbackType(v interface{}) string {
 	return ""
 }
 
-// colorOutput colours what plistwatch prints: the dimmed comment lines and the
-// alternating runnable commands. It is set at startup and left off unless a
-// terminal is there to render the escapes.
+// colorOutput gates every escape plistwatch emits. Set at startup, and left off
+// unless stdout is a terminal.
 var colorOutput bool
 
-// dim wraps each line of s in the ANSI bright-black escape, so comments read as
-// secondary next to the runnable `defaults` commands. Each line is closed
-// separately, so a line that is piped or interleaved never leaks the colour.
+// dim wraps each line of s in ANSI bright black, so comments read as secondary
+// next to the runnable commands. Each line closes its own escape, so piped or
+// interleaved output never leaks color.
 func dim(s string) string {
 	if !colorOutput || s == "" {
 		return s
@@ -76,26 +75,23 @@ func dim(s string) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
-// domainColorer alternates the colour of the runnable `defaults` lines as the
-// domain being written changes, so a burst reads as groups rather than one wall
-// of text. Consecutive lines for one domain keep their colour; the colour flips
-// at a domain boundary. A domain that comes back later may reuse either colour
-// — only neighbours have to differ.
-//
-// The two colours are the terminal's own foreground (no escape at all) and ANSI
-// cyan, both legible on a light and a dark background.
+// domainColorer alternates the color of runnable `defaults` lines as the domain
+// changes, so a burst reads as groups. Consecutive lines for one domain keep
+// their color and it flips at a boundary; a returning domain may reuse either,
+// since only neighbors have to differ. The two colors are the terminal's own
+// foreground (no escape) and ANSI cyan, legible on light and dark alike.
 type domainColorer struct {
-	domain string // the domain the current colour was chosen for
-	alt    bool   // whether that colour is the cyan one
+	domain string // the domain the current color was chosen for
+	alt    bool   // whether that color is the cyan one
 }
 
 // lineColor carries the alternation across polls, so a domain that keeps
-// changing over several seconds still reads as one group.
+// changing still reads as one group.
 var lineColor domainColorer
 
 // line returns one runnable `defaults` command, without its newline, in the
-// colour that belongs to domain. The command itself is untouched: stripping or
-// disabling the escapes leaves the same pasteable bytes.
+// color belonging to domain. The command is untouched: strip the escapes and
+// the bytes are still pasteable.
 func (c *domainColorer) line(domain string, s string) string {
 	if domain != c.domain {
 		c.domain = domain
@@ -107,16 +103,13 @@ func (c *domainColorer) line(domain string, s string) string {
 	return "\x1b[36m" + s + "\x1b[0m"
 }
 
-// excludedChanges reports the excluded domains that moved between two polls, as
-// one comment line per domain: enough to know that something changed there,
-// without the keys or the values that got the domain excluded in the first
-// place. Lines are sorted so a poll that touches several domains reads the same
-// way every time.
+// excludedChanges reports which excluded domains moved between two polls, one
+// comment line each: enough to know something changed, without the keys and
+// values that got the domain excluded. Lines are sorted so a poll reads the
+// same way every time.
 //
-// The comparison is reflect.DeepEqual rather than cmp(): cmp only has cases
-// for the types `defaults read` happens to produce today, where every scalar
-// arrives as a string, and silently reports anything else equal. DeepEqual
-// needs no such list.
+// The comparison is reflect.DeepEqual, not cmp(): cmp only has cases for the
+// types `defaults read` produces today and silently calls anything else equal.
 func excludedChanges(prev map[string]interface{}, curr map[string]interface{}) []string {
 	var lines []string
 

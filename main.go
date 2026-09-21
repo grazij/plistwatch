@@ -61,7 +61,7 @@ func filterDomains(m map[string]any, include, exclude []string) map[string]any {
 	return excluded
 }
 
-// isTerminal reports whether f is a terminal, and so whether colour escapes
+// isTerminal reports whether f is a terminal, and so whether color escapes
 // have anything to render them.
 func isTerminal(f *os.File) bool {
 	info, err := f.Stat()
@@ -91,8 +91,8 @@ func main() {
 		return
 	}
 
-	// Persistent filters live in a file and merge with --filter, so an
-	// exclusion set once stays in force for one-off filtered runs.
+	// File filters merge with --filter, so an exclusion set once stays in
+	// force during one-off filtered runs.
 	path, fileFilters, err := resolveFilters(configPath)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -103,7 +103,7 @@ func main() {
 	filters.addSet(cliFilters)
 
 	// NO_COLOR (https://no-color.org) and a redirected stdout both mean the
-	// escapes would be noise rather than colour.
+	// escapes would be noise rather than color.
 	colorOutput = !quiet && isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == ""
 
 	if !quiet {

@@ -53,7 +53,7 @@ func TestLoadFilters(t *testing.T) {
 			wantExclude: []string{"com.apple.*"},
 		},
 		{
-			name:        "case is normalised like --filter",
+			name:        "case is normalized like --filter",
 			contents:    "COM.Apple.Dock\n",
 			wantInclude: []string{"com.apple.dock"},
 		},

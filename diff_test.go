@@ -226,9 +226,8 @@ func TestDim(t *testing.T) {
 }
 
 // Runnable commands alternate between the terminal's own foreground and cyan as
-// the domain changes, so a burst of them reads as groups. The colour holds for
-// consecutive lines of one domain and flips at the boundary; a domain that
-// comes back later may reuse either colour.
+// the domain changes. The color holds for consecutive lines of one domain and
+// flips at the boundary; a returning domain may reuse either.
 func TestDomainColorerLine(t *testing.T) {
 	t.Cleanup(func() { colorOutput = false })
 	colorOutput = true
@@ -240,19 +239,19 @@ func TestDomainColorerLine(t *testing.T) {
 		alt []bool
 	}{
 		{
-			name:    "consecutive lines of one domain share a colour",
+			name:    "consecutive lines of one domain share a color",
 			domains: []string{"a", "a", "a"},
 			alt:     []bool{true, true, true},
 		},
 		{
-			name:    "the colour flips at a domain boundary",
+			name:    "the color flips at a domain boundary",
 			domains: []string{"a", "b", "b", "c"},
 			alt:     []bool{true, false, false, true},
 		},
 		{
-			// Only neighbours have to differ: "a" is cyan both times here,
+			// Only neighbors have to differ: "a" is cyan both times,
 			// and need not have been.
-			name:    "a returning domain may reuse either colour",
+			name:    "a returning domain may reuse either color",
 			domains: []string{"a", "b", "a"},
 			alt:     []bool{true, false, true},
 		},
@@ -275,8 +274,8 @@ func TestDomainColorerLine(t *testing.T) {
 	}
 }
 
-// The alternation runs on the same gate as the dimmed comments: with colour off
-// the commands come out byte-identical, so redirected output stays pasteable.
+// The alternation shares the gate with the dimmed comments: with color off the
+// commands are byte-identical, so redirected output stays pasteable.
 func TestDomainColorerLineWithoutColor(t *testing.T) {
 	t.Cleanup(func() { colorOutput = false })
 	colorOutput = false
