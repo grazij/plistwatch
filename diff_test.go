@@ -119,3 +119,108 @@ func TestFallbackType(t *testing.T) {
 		})
 	}
 }
+
+// Excluded domains are still watched, but only enough to say that something
+// moved: one comment line per domain per poll, with no keys and no values.
+func TestExcludedChanges(t *testing.T) {
+	dom := func(v interface{}) map[string]interface{} {
+		return map[string]interface{}{"key": v}
+	}
+
+	tests := []struct {
+		name string
+		prev map[string]interface{}
+		curr map[string]interface{}
+		want []string
+	}{
+		{
+			name: "unchanged domain is silent",
+			prev: map[string]interface{}{"a": dom("x")},
+			curr: map[string]interface{}{"a": dom("x")},
+		},
+		{
+			name: "changed value",
+			prev: map[string]interface{}{"a": dom("x")},
+			curr: map[string]interface{}{"a": dom("y")},
+			want: []string{`# defaults write "a"`},
+		},
+		{
+			// `defaults read` renders every scalar as a string today, so
+			// these two cases are about not depending on that: cmp()
+			// would report both pairs equal.
+			name: "changed integer value",
+			prev: map[string]interface{}{"a": dom(uint64(1))},
+			curr: map[string]interface{}{"a": dom(uint64(2))},
+			want: []string{`# defaults write "a"`},
+		},
+		{
+			name: "changed boolean value",
+			prev: map[string]interface{}{"a": dom(true)},
+			curr: map[string]interface{}{"a": dom(false)},
+			want: []string{`# defaults write "a"`},
+		},
+		{
+			name: "added key",
+			prev: map[string]interface{}{"a": map[string]interface{}{}},
+			curr: map[string]interface{}{"a": dom("x")},
+			want: []string{`# defaults write "a"`},
+		},
+		{
+			name: "new domain",
+			curr: map[string]interface{}{"a": dom("x")},
+			want: []string{`# defaults write "a"`},
+		},
+		{
+			name: "removed domain",
+			prev: map[string]interface{}{"a": dom("x")},
+			want: []string{`# defaults delete "a"`},
+		},
+		{
+			name: "one line per domain, sorted, however many keys moved",
+			prev: map[string]interface{}{
+				"b": map[string]interface{}{"k1": "x", "k2": "x"},
+				"a": dom("x"),
+			},
+			curr: map[string]interface{}{
+				"b": map[string]interface{}{"k1": "y", "k2": "y"},
+				"a": dom("y"),
+			},
+			want: []string{`# defaults write "a"`, `# defaults write "b"`},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := excludedChanges(tt.prev, tt.curr)
+			if len(got) != len(tt.want) {
+				t.Fatalf("excludedChanges() = %q, want %q", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Fatalf("excludedChanges() = %q, want %q", got, tt.want)
+				}
+			}
+		})
+	}
+}
+
+// Comment output is dimmed so it reads as secondary next to the runnable
+// commands, but only when a terminal is there to render it: redirected output
+// must stay pasteable.
+func TestDim(t *testing.T) {
+	t.Cleanup(func() { colorComments = false })
+
+	colorComments = false
+	if got := dim("# one\n# two\n"); got != "# one\n# two\n" {
+		t.Errorf("dim() without color = %q, want it unchanged", got)
+	}
+
+	colorComments = true
+	want := "\x1b[90m# one\x1b[0m\n\x1b[90m# two\x1b[0m\n"
+	if got := dim("# one\n# two\n"); got != want {
+		t.Errorf("dim() = %q, want %q", got, want)
+	}
+	if got := dim(""); got != "" {
+		t.Errorf("dim(\"\") = %q, want empty", got)
+	}
+}

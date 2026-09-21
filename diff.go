@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -54,6 +55,52 @@ func fallbackType(v interface{}) string {
 		return "date"
 	}
 	return ""
+}
+
+// colorComments dims the comment lines plistwatch prints. It is set at startup
+// and left off unless a terminal is there to render the escapes.
+var colorComments bool
+
+// dim wraps each line of s in the ANSI bright-black escape, so comments read as
+// secondary next to the runnable `defaults` commands. Each line is closed
+// separately, so a line that is piped or interleaved never leaks the colour.
+func dim(s string) string {
+	if !colorComments || s == "" {
+		return s
+	}
+	lines := strings.Split(strings.TrimSuffix(s, "\n"), "\n")
+	for i, line := range lines {
+		lines[i] = "\x1b[90m" + line + "\x1b[0m"
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+// excludedChanges reports the excluded domains that moved between two polls, as
+// one comment line per domain: enough to know that something changed there,
+// without the keys or the values that got the domain excluded in the first
+// place. Lines are sorted so a poll that touches several domains reads the same
+// way every time.
+//
+// The comparison is reflect.DeepEqual rather than cmp(): cmp only has cases
+// for the types `defaults read` happens to produce today, where every scalar
+// arrives as a string, and silently reports anything else equal. DeepEqual
+// needs no such list.
+func excludedChanges(prev map[string]interface{}, curr map[string]interface{}) []string {
+	var lines []string
+
+	for domain, v := range curr {
+		if old, ok := prev[domain]; !ok || !reflect.DeepEqual(old, v) {
+			lines = append(lines, fmt.Sprintf("# defaults write \"%s\"", domain))
+		}
+	}
+	for domain := range prev {
+		if _, ok := curr[domain]; !ok {
+			lines = append(lines, fmt.Sprintf("# defaults delete \"%s\"", domain))
+		}
+	}
+
+	sort.Strings(lines)
+	return lines
 }
 
 func Diff(d1 map[string]interface{}, d2 map[string]interface{}) error {
